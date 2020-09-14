@@ -5,6 +5,9 @@
 namespace Evas\Auth;
 
 use Evas\Auth\AuthException;
+use Evas\Auth\Models\AuthGrant;
+use Evas\Auth\Models\AuthGrantConfirm;
+use Evas\Auth\Models\AuthSession;
 use Evas\Auth\Sources\Vk\VkController;
 use Evas\Auth\Sources\Fb\FbController;
 use Evas\Auth\Sources\Google\GoogleController;
@@ -17,33 +20,51 @@ use Evas\Auth\Sources\Google\GoogleController;
 class AuthAdapter
 {
     /**
-     * @static array маппинг статусов грантов авторизации
+     * @static int коды ошибок
      */
-    const AUTH_GRANT_STATUSES_MAP = [
-        0 => 'не подтвержден',
-        1 => 'подвержден',
-        2 => 'устарел, необходимо обновить',
-    ];
+    const ERROR_SOURCE_CONTROLLER_NOT_SUPPORTED = 0;
+    const ERROR_SOURCE_CONTROLLER_NOT_FOUND = 1;
+    const ERROR_SOURCE_CONTROLLER_ACTION_NOT_FOUND = 2;
+    const ERROR_MODEL_TABLE_NOT_FOUND = 3;
+    const ERROR_USER_NOT_FOUND = 4;
+    const ERROR_USER_FAIL_PASSWORD = 5;
+    const ERROR_VALIDATOR = 6;
+    const ERROR_USER_ALREADY_EXISTS = 7;
+    const ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND = 8;
 
     /**
      * @static array маппинг ошибок
      */
     const ERRORS_MAP = [
-        0 => 'Пользователь не найден',
-        1 => 'Неверный пароль',
-        2 => 'Неверное имя пользователя/пароль',
-        3 => 'Пользователь уже существует',
-        4 => 'Код подтверждения не найден, возможно, вы уже подтвердили вход',
+        self::ERROR_SOURCE_CONTROLLER_NOT_SUPPORTED => 'Обработчик авторизации через %s не поддерживается',
+        self::ERROR_SOURCE_CONTROLLER_NOT_FOUND => 'Обработчик авторизации через %s не найден',
+        self::ERROR_SOURCE_CONTROLLER_ACTION_NOT_FOUND => 'Действие %s обработчика авторизации через %s не найдено',
+        self::ERROR_MODEL_TABLE_NOT_FOUND => 'Имя таблицы модели данных %s не найдено',
+        self::ERROR_USER_NOT_FOUND => 'Пользователь не найден',
+        self::ERROR_USER_FAIL_PASSWORD => 'Неверный пароль',
+        self::ERROR_VALIDATOR => 'Неверное имя пользователя/пароль',
+        self::ERROR_USER_ALREADY_EXISTS => 'Пользователь уже существует',
+        self::ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND => 'Код подтверждения не найден, возможно, вы уже подтвердили вход',
     ];
 
     /**
-     * @static int коды ошибок
+     * @static array маппинг статусов грантов авторизации
      */
-    const ERROR_USER_NOT_FOUND = 0;
-    const ERROR_USER_FAIL_PASSWORD = 1;
-    const ERROR_VALIDATOR = 2;
-    const ERROR_USER_ALREADY_EXISTS = 3;
-    const ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND = 4;
+    const AUTH_GRANT_STATUSES_MAP = [
+        AuthGrant::STATUS_NOT_CONFIRMED => 'не подтвержден',
+        AuthGrant::STATUS_CONFIRMED => 'подвержден',
+        AuthGrant::STATUS_OUTDATED => 'необходимо обновить',
+    ];
+
+    /**
+     * @static array маппинг таблиц моделей
+     */
+    const MODELS_TABLES = [
+        AuthGrant::class => 'auth_grants',
+        AuthSession::class => 'auth_sessions',
+        AuthGrantConfirm::class => 'auth_grant_confirms',
+    ];
+
 
     /**
      * @static string имя токена авторизации в cookie
@@ -71,21 +92,52 @@ class AuthAdapter
      * @param string источник
      * @param string метод
      * @param array|null параметры
+     * @throws AuthException
      */
     public static function run(string $source, string $action, array $params = null)
     {
         $controllerClass = static::$sources[$source] ?? null;
         if (empty($controllerClass)) {
-            throw new AuthException("Обработчик авторизации через $source не поддерживается");
+            static::throwError(static::ERROR_SOURCE_CONTROLLER_NOT_SUPPORTED, [$source]);
         }
         if (!class_exists($controllerClass, true)) {
-            throw new AuthException("Обработчик авторизации через $source не найден");
+            static::throwError(static::ERROR_SOURCE_CONTROLLER_NOT_FOUND, [$source]);
         }
         $controller = new $controllerClass;
         $action .= 'Action';
         if (!method_exists($controller, $action)) {
-            throw new AuthException("Действие $action обработчика авторизации через $source не найдено");
+            static::throwError(static::ERROR_SOURCE_CONTROLLER_ACTION_NOT_FOUND, [$action, $source]);
         }
         call_user_func([$controller, $action], $params);
+    }
+
+    /**
+     * Выбрасывание исключения с подстановкой текста ошибки.
+     * @param int код ошибки
+     * @param array|null параметры для подстановки
+     * @throws AuthException
+     */
+    public static function throwError(int $code, array $props = null)
+    {
+        $error = static::ERRORS_MAP[$code];
+        if (!empty($props)) {
+            $error = vsprintf($error, $props);
+        }
+        throw new AuthException($error);
+    }
+
+    /**
+     * Получение имени таблицы модели данных.
+     * @param string имя класса модели
+     * @throws AuthException
+     * @return string
+     */
+    public static function getModelTableName(string $className): string
+    {
+        $tableName = static::MODELS_TABLES[$className] ?? null;
+        if (empty($tableName)) {
+            static::throwError(static::ERROR_MODEL_TABLE_NOT_FOUND, [$className]);
+        }
+        return $tableName;
     }
 }
