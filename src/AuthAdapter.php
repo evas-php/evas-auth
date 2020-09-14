@@ -16,6 +16,27 @@ use Evas\Auth\Sources\Google\GoogleController;
  */
 class AuthAdapter
 {
+    /**
+     * @static string ошибка
+     */
+    const ERROR_USER_NOT_FOUND = 'Пользователь не найден';
+    const ERROR_USER_FAIL_PASSWORD = 'Неверный пароль';
+    const ERROR_VALIDATOR = 'Неверное имя пользователя/пароль';
+    const ERROR_USER_ALREADY_EXISTS = 'Пользователь уже существует';
+
+    /**
+     * @static string имя токена авторизации в cookie
+     */
+    const AUTH_TOKEN_COOKIE_NAME = 'token';
+
+    /**
+     * @static int время жизни токена авторизации в секундах.
+     */
+    const AUTH_TOKEN_ALIVE = 2592000;
+
+    /**
+     * @var array маппинг источников авторизации.
+     */
     protected static $sources = [
         'vk' => VkController::class,
         'fb' => FbController::class,
@@ -24,14 +45,12 @@ class AuthAdapter
         'phone' => PhoneController::class,
     ];
 
-    public static function handle(string $path)
-    {
-        list($source, $action) = @explode('', $path);
-        if (empty($action)) {
-            return false;
-        }
-    }
-
+    /**
+     * Запуск обработчика.
+     * @param string источник
+     * @param string метод
+     * @param array|null параметры
+     */
     public static function run(string $source, string $action, array $params = null)
     {
         $controllerClass = static::$sources[$source] ?? null;
