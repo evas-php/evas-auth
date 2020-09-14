@@ -15,7 +15,6 @@ use Evas\Auth\Helpers\Model;
  */
 class AuthGrantConfirm extends Model
 {
-    public static $tableName = 'auth_confirm';
     public static $primaryKey = 'user_id';
 
     /**

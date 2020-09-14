@@ -15,11 +15,6 @@ use Evas\Auth\Helpers\Model;
 class AuthSession extends Model
 {
     /**
-     * @var string имя таблицы
-     */
-    public static $tableName = 'auth_sessions';
-
-    /**
      * Поля записи.
      * @var int $id UNSIGNED PRIMARY id записи
      * @var int $user_id UNSIGNED INDEX id пользователя

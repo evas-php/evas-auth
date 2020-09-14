@@ -22,11 +22,6 @@ class AuthGrant extends Model
     const STATUS_OUTDATED = 2;
 
     /**
-     * @var string имя таблицы
-     */
-    public static $tableName = 'auth_grants';
-
-    /**
      * Поля записи.
      * @var int $id UNSIGNED PRIMARY id записи
      * @var int $user_id UNSIGNED INDEX id пользователя
