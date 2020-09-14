@@ -8,7 +8,7 @@ use Evas\Auth\AuthAdapter;
 use Evas\Auth\Helpers\Model;
 
 /**
- * Модель пользователя.
+ * Модель сессии авторизации.
  * @author Egor Vasyakin <e.vasyakin@itevas.ru>
  * @since 14 Sep 2020
  */
@@ -21,18 +21,23 @@ class AuthSession extends Model
 
     /**
      * Поля записи.
-     * @var int UNSIGNED INDEX id пользователя
-     * @var varchar(60) UNIQUE токен пользователя
-     * @var varchar(15) ip пользователя
-     * @var varchar(250) user_agent пользователя
-     * @var datetime время истечения токена
+     * @var int $id UNSIGNED PRIMARY id записи
+     * @var int $user_id UNSIGNED INDEX id пользователя
+     * @var int $auth_grant_id UNSIGNED INDEX id гранта авторизации
+     * @var varchar(60) $token UNIQUE токен пользователя
+     * @var varchar(15) $user_ip ip пользователя
+     * @var varchar(250) $user_agent user_agent пользователя
+     * @var datetime $end_time время истечения токена
+     * @var datetime $create_time время создания записи
      */
+    public $id;
     public $user_id;
     public $auth_grant_id;
     public $token;
     public $user_ip;
     public $user_agent;
     public $end_time;
+    public $create_time;
 
     // | id | user_id | auth_grant_id | token | user_ip | user_agent | user_browser | user_os | end_time | create_time |
     // |---------------------------------------------------------------------------------------------------------------|
@@ -64,11 +69,12 @@ class AuthSession extends Model
     }
 
     /**
-     * Запуск авторизации: создание записи авторизации и запись токена в cookie.
+     * Авторизация.
+     * Создание/обновление записи авторизации и запись токена в cookie.
      * @param AuthGrant гарант авторизации
      * @return static
      */
-    public static function make(AuthGrant $authGrant): AuthSession
+    public static function login(AuthGrant $authGrant): AuthSession
     {
         $user_id = $authGrant->user_id;
         $auth_grant_id = $authGrant->id;
