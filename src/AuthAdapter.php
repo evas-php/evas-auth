@@ -17,12 +17,33 @@ use Evas\Auth\Sources\Google\GoogleController;
 class AuthAdapter
 {
     /**
-     * @static string ошибка
+     * @static array маппинг статусов грантов авторизации
      */
-    const ERROR_USER_NOT_FOUND = 'Пользователь не найден';
-    const ERROR_USER_FAIL_PASSWORD = 'Неверный пароль';
-    const ERROR_VALIDATOR = 'Неверное имя пользователя/пароль';
-    const ERROR_USER_ALREADY_EXISTS = 'Пользователь уже существует';
+    const AUTH_GRANT_STATUSES_MAP = [
+        0 => 'не подтвержден',
+        1 => 'подвержден',
+        2 => 'устарел, необходимо обновить',
+    ];
+
+    /**
+     * @static array маппинг ошибок
+     */
+    const ERRORS_MAP = [
+        0 => 'Пользователь не найден',
+        1 => 'Неверный пароль',
+        2 => 'Неверное имя пользователя/пароль',
+        3 => 'Пользователь уже существует',
+        4 => 'Код подтверждения не найден, возможно, вы уже подтвердили вход',
+    ];
+
+    /**
+     * @static int коды ошибок
+     */
+    const ERROR_USER_NOT_FOUND = 0;
+    const ERROR_USER_FAIL_PASSWORD = 1;
+    const ERROR_VALIDATOR = 2;
+    const ERROR_USER_ALREADY_EXISTS = 3;
+    const ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND = 4;
 
     /**
      * @static string имя токена авторизации в cookie
@@ -30,7 +51,7 @@ class AuthAdapter
     const AUTH_TOKEN_COOKIE_NAME = 'token';
 
     /**
-     * @static int время жизни токена авторизации в секундах.
+     * @static int время жизни токена авторизации в секундах
      */
     const AUTH_TOKEN_ALIVE = 2592000;
 
