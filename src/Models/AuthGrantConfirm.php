@@ -15,6 +15,9 @@ use Evas\Auth\Helpers\Model;
  */
 class AuthGrantConfirm extends Model
 {
+    /**
+     * @var string первичный ключ
+     */
     public static $primaryKey = 'user_id';
 
     /**
