@@ -6,28 +6,19 @@ namespace Evas\Auth\Helpers;
 
 use Evas\Auth\AuthException;
 use Evas\Base\App;
+use Evas\Base\Helpers\PhpHelper;
 
 /**
- * Класс конфига api.
+ * Класс конфига.
  * @author Egor Vasyakin <egor@evas-php.com>
  * @since 7 Sep 2020
  */
-class ApiConfig
+class Config
 {
-    /**
-     * @var string путь к конфигу
-     */
-    public $filepath;
-
     /**
      * @var array данные конфига
      */
     protected $data = [];
-
-    /**
-     * @var bool была ли попытка загрузки конфига
-     */
-    public $loaded = false;
 
     /**
      * @var bool игнорирование несуществующих значений
@@ -36,36 +27,50 @@ class ApiConfig
 
     /**
      * Конструктор.
-     * @param string имя конфига
+     * @param string|null путь к конфигу
      * @param array|null данные конфига по умолчанию
      * @throws AuthException
      */
-    public function __construct(string $filepath, array $default = null)
+    public function __construct(string $filename = null, array $default = null)
     {
-        $this->filepath = $filepath;
-        $this->load();
-        if (!empty($default)) {
-            $this->data = array_merge($default, $this->data);
+        if (!empty($default)) $this->mergeData($default);
+        if (!empty($filename)) $this->load($filename);
+    }
+
+    /**
+     * Склеивание данных.
+     * @param array данные
+     * @return self
+     */
+    public function mergeData(array $data)
+    {
+        foreach ($data as $key => &$value) {
+            if (PhpHelper::isAssoc($value)) {
+                $before = $this->data[$key] ?? [];
+                $value = array_merge($before, $value);
+            }
         }
+        $this->data = array_merge($this->data, $data);
+        return $this;
     }
 
     /**
      * Загрузка конфига.
+     * @param string путь к конфигу
      * @throws AuthException
+     * @return self
      */
-    public function load()
+    public function load(string $filename)
     {
-        if (false === $this->loaded) {
-            $data = App::loadByApp($this->filepath);
-            if (empty($data)) {
-                throw new AuthException("Config \"$this->filepath\" not found");
-            }
-            if (!is_array($data)) {
-                throw new AuthException(sprintf("Config \"$this-filepath\" data must be type of array, %s given"), gettype($data));
-            }
-            $this->data = $data;
-            $this->loaded = true;
+        $data = App::loadByApp($filename);
+        if (empty($data)) {
+            throw new AuthException("Config \"$filename\" not found");
         }
+        if (!PhpHelper::isAssoc($data)) {
+            throw new AuthException(sprintf("Config \"$filename\" data must be type of assoc array, %s given"), 
+                gettype($data));
+        }
+        return $this->mergeData($data);
     }
 
     /**
@@ -88,7 +93,7 @@ class ApiConfig
     {
         if (!isset($this->data[$name])) {
             if (false === $this->ignoreUndefined) {
-                throw new AuthException("Config \"$this->filepath\" not has property \"$name\"");
+                throw new AuthException("Config \"$filename\" not has property \"$name\"");
             }
         }
         return $this->data[$name] ?? null;
