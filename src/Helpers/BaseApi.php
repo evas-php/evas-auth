@@ -5,7 +5,7 @@
 namespace Evas\Auth\Helpers;
 
 use Evas\Auth\AuthException;
-use Evas\Auth\Helpers\ApiConfig;
+use Evas\Auth\Helpers\Config;
 use Evas\Curl\Curl;
 
 /**
@@ -32,18 +32,18 @@ abstract class BaseApi
     const ERROR_OAUTH_CODE_EMPTY = 'Код доступа не получен';
 
     /**
-     * @var ApiConfig
+     * @var Config
      */
     protected static $config;
 
     /**
-     * Получение доступа к конфигу.
-     * @return ApiConfig
+     * Получение конфига.
+     * @return Config
      */
-    public static function config(): ApiConfig
+    public static function config(): Config
     {
         if (empty(static::$config)) {
-            static::$config = new ApiConfig(static::CONFIG_PATH, static::CONFIG_DEFAULT);
+            static::$config = new Config(static::CONFIG_PATH, static::CONFIG_DEFAULT);
         }
         return static::$config;
     }
