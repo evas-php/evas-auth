@@ -22,7 +22,9 @@ class AuthException extends \Exception
     public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
     {
         if (empty($message) && !empty($code)) {
-            $message = AuthAdapter::ERRORS_MAP[$code] ?? '';
+            // $message = AuthAdapter::ERRORS_MAP[$code] ?? '';
+            $errorsMap = AuthAdapter::config()->get('errors_map') ?? [];
+            $message = $errorsMap[$code] ?? '';
         }
         return parent::__construct($message, $code, $previous)
     }
