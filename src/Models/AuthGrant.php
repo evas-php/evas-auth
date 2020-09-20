@@ -17,9 +17,10 @@ class AuthGrant extends Model
     /**
      * @static int константы id статусов
      */
-    const STATUS_NOT_CONFIRMED = 0;
+    const STATUS_INIT = 0;
     const STATUS_CONFIRMED = 1;
-    const STATUS_OUTDATED = 2;
+    const STATUS_UNACTIVE = 2;
+    const STATUS_OUTDATED = 3;
 
     /**
      * Поля записи.
@@ -28,7 +29,7 @@ class AuthGrant extends Model
      * @var varchar(7) $source INDEX источник входа
      * @var var_char(60) $login INDEX (+source) логин/id пользователя в источнике
      * @var var_char(250) $token INDEX (+source) токен пользователя в источнике
-     * @var tinyint(3) $status_id статус
+     * @var tinyint(3) $status статус
      * @var json(512) $payload дополнительная нагрузка источника (для доп. параметров гугла, например)
      * @var datetime $create_time время создания записи
      */
@@ -37,7 +38,7 @@ class AuthGrant extends Model
     public $source;
     public $login;
     public $token;
-    public $status_id;
+    public $status;
     public $payload;
     public $create_time;
 
@@ -69,12 +70,12 @@ class AuthGrant extends Model
     }
 
     /**
-     * Поиск по токену и источнику.
+     * Поиск по токену источника.
      * @param string токена
      * @param string источник
      * @return static|null
      */
-    public static function findByToken(string $token, string $source): ?AuthGrant
+    public static function findBySourceToken(string $source, string $token): ?AuthGrant
     {
         return static::find()
             ->where('source = ? AND token = ?', [$source, $token])
@@ -82,10 +83,34 @@ class AuthGrant extends Model
     }
 
     /**
-     * Получение строкового статуса.
+     * Обновление статуса на подтверждено.
+     * @return self
      */
-    public function stringStatus(): string
+    public function confirm(): AuthGrant
     {
-        return 'Ваш ' . $this->source . ' ' . AuthAdapter::AUTH_GRANT_STATUSES_MAP[$this->status_id];
+        $this->status = static::STATUS_CONFIRMED;
+        return $this->save();
+    }
+
+    /**
+     * Восстановление гранта авторизации с сохранением.
+     * @param string новый токен (пароль)
+     * @return self
+     */
+    public function recovery(string $token): AuthGrant
+    {
+        $this->token = $token;
+        return $this->confirm();
+    }
+
+    /**
+     * Получение строкового статуса.
+     * @return string
+     */
+    public function getStringStatus(): string
+    {
+        return sprintf(AuthAdapter::config()->get('auth_grant_status_string_format'),
+            $this->source, AuthAdapter::getConfigListItem('auth_grant_statuses_map', $this->status)
+        );
     }
 }

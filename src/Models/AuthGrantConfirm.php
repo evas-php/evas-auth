@@ -5,8 +5,8 @@
 namespace Evas\Auth\Models;
 
 use Evas\Auth\AuthAdapter;
-use Evas\Auth\AuthException;
 use Evas\Auth\Helpers\Model;
+use Evas\Auth\Models\AuthGrant;
 
 /**
  * Модель подтверждения гранта авторизации.
@@ -18,7 +18,7 @@ class AuthGrantConfirm extends Model
     /**
      * @var string первичный ключ
      */
-    public static $primaryKey = 'user_id';
+    public static $primaryKey = 'auth_grant_id';
 
     /**
      * Поля записи.
@@ -27,8 +27,8 @@ class AuthGrantConfirm extends Model
      * @var varchar(7) $code UNIQUE код подтверждения
      * @var datetime $create_time время создания записи
      */
-    public $user_id;
     public $auth_grant_id;
+    public $user_id;
     public $code;
     public $create_time;
 
@@ -42,7 +42,7 @@ class AuthGrantConfirm extends Model
      * @param string код
      * @return static|null
      */
-    public static function findByCode(string $code): ?AuthConfirm
+    public static function findByCode(string $code): ?AuthGrantConfirm
     {
         return static::find()->where('code = ?', [$code])->one()->classObject(static::class);
     }
@@ -56,7 +56,15 @@ class AuthGrantConfirm extends Model
     {
         $row = static::findByCode($code);
         if (empty($row)) {
-            throw new AuthException(AuthAdapter::ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND);
+            AuthAdapter::throwError(AuthAdapter::ERROR_AUTH_GRANT_CONFIRM_NOT_FOUND);
         }
+        // ищем грант авторизации и подтверждаем его
+        $ag = AuthGrant::findByid($row->auth_grant_id);
+        if (empty($ag)) {
+            AuthAdapter::throwError(AuthAdapter::ERROR_AUTH_GRANT_NOT_FOUND);
+        }
+        $ag->confirm();
+        // удаляем запись о проверке
+        $row->delete();
     }
 }
