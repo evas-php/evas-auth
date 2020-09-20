@@ -20,7 +20,7 @@ class VkController
         // echo VkOauth::getAuthLink();
     }
 
-    public function loggedAction($params)
+    public function loggedAction(array $params = null)
     {
         echo '
         <!DOCTYPE html>
@@ -36,7 +36,7 @@ class VkController
         echo '<h3>2. get access token</h3>';
         $accessData = VkOauth::accessByParams($params);
         var_dump($accessData);
-        echo '<h3>2. get user data</h3>';
+        echo '<h3>3. get user data</h3>';
         $userData = VkOauth::getUserData($accessData['access_token']);
         var_dump($userData);
         echo '

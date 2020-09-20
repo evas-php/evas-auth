@@ -20,7 +20,7 @@ class GoogleController
         echo GoogleOauth::getAuthLink();
     }
 
-    public function loggedAction($params)
+    public function loggedAction(array $params = null)
     {
         echo '
         <!DOCTYPE html>
@@ -36,7 +36,7 @@ class GoogleController
         echo '<h3>2. get access token</h3>';
         $accessData = GoogleOauth::accessByParams($params);
         var_dump($accessData);
-        echo '<h3>2. get user data</h3>';
+        echo '<h3>3. get user data</h3>';
         $userData = GoogleOauth::getUserData($accessData->accessToken, $accessData);
         var_dump($userData);
         echo '

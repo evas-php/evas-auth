@@ -27,7 +27,7 @@ class FbController
         // echo FbOauth::getAuthLink();
     }
 
-    public function loggedAction($params)
+    public function loggedAction(array $params = null)
     {
         echo '
         <!DOCTYPE html>
@@ -43,7 +43,7 @@ class FbController
         echo '<h3>2. get access token</h3>';
         $accessData = FbOauth::accessByParams($params);
         var_dump($accessData);
-        echo '<h3>2. get user data</h3>';
+        echo '<h3>3. get user data</h3>';
         $userData = FbOauth::getUserData($accessData['access_token']);
         var_dump($userData);
         echo '
