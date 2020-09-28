@@ -51,6 +51,14 @@ class FbOauth extends BaseApi
     ];
 
     /**
+     * @static array маппинг гендерных данных
+     */
+    const GENDERS_MAP = [
+        'female' => 1,
+        'male' => 2
+    ];
+
+    /**
      * Получение oauth ссылки на авторизацию.
      * @return string ссылка для перехода на авторизацию
      */
@@ -127,5 +135,33 @@ class FbOauth extends BaseApi
         return $data;
         // if (!empty($user_ids)) return $data->response;
         // return $data->response[0];
+    }
+
+    /**
+     * Преобразование данных пользователя в единый формат.
+     * @param array данные пользователя без форматирования
+     * @return array данные пользователя после форматирования
+     */
+    public static function userDataFormatting(array $data): array
+    {
+        if (!empty($data['picture'])) {
+            $data['picture'] = $data['picture']['data']['url'];
+        }
+        if (!empty($data['birthday'])) {
+            list($m, $d, $y) = explode('/', $data['birthday']);
+            if ($d < 10) $d = "0$d";
+            if ($m < 10) $m = "0$m";
+            $data['birthdate'] = "$d.$m.$y";
+            unset($data['birthday']);
+        }
+        if (!empty($data['gender'])) {
+            $data['gender'] = static::GENDERS_MAP[$data['gender']] ?? null;
+        }
+        if (!empty($data['location'])) {
+            list($city, $region) = explode(',', $data['location']);
+            $data['city'] = $city;
+            $data['region'] = $region;
+        }
+        return $data;
     }
 }

@@ -109,8 +109,8 @@ class GoogleOauth extends BaseApi
             throw new AuthException(static::ERROR_RESPONSE);
         }
         return (array) $data;
-        // $userData = static::getUserData($data->access_token);
-        // $data = array_merge($userData, ['access_token' => $data->access_toen]);
+        // $data = static::getUserData($data->access_token);
+        // $data = array_merge($data, ['access_token' => $data->access_toen]);
         // return [$data->email, $data->access_token];
     }
 
@@ -174,5 +174,27 @@ class GoogleOauth extends BaseApi
                 unset($data[$key]);
             }
         }
+    }
+
+    /**
+     * Преобразование данных пользователя в единый формат.
+     * @param array данные пользователя без форматирования
+     * @return array данные пользователя после форматирования
+     */
+    public static function userDataFormatting(array $data): array
+    {
+        if (!empty($data['name'])) {
+            list($data['first_name'], $data['last_name']) = explode(' ', $data['name']);
+            unset($data['name']);
+        }
+        if (!empty($data['given_name'])) {
+            $data['first_name'] = $data['given_name'];
+            unset($data['given_name']);
+        }
+        if (!empty($data['family_name'])) {
+            $data['last_name'] = $data['family_name'];
+            unset($data['family_name']);
+        }
+        return $data;
     }
 }

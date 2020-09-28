@@ -196,4 +196,33 @@ class VkOauth extends BaseApi
         if (!empty($user_ids)) return [$data->response];
         return $data->response; 
     }
+
+    /**
+     * Преобразование данных пользователя в единый формат.
+     * @param array данные пользователя без форматирования
+     * @return array данные пользователя после форматирования
+     */
+    public static function userDataFormatting(array $data): array
+    {
+        $data['picture'] = $data['photo_max'];
+        unset($data['photo_max']);
+        if (!empty($data['bdate'])) {
+            list($d, $m, $y) = explode('.', $data['bday']);
+            if ($d < 10) $d = "0$d";
+            if ($m < 10) $m = "0$m";
+            $data['birthdate'] = "$d.$m.$y";
+            unset($data['bdate']);
+        }
+        if (!empty($data['sex'])) {
+            $data['gender'] = $data['sex'];
+            unset($data['sex']);
+        }
+        if (!empty($data['city'])) {
+            $data['city'] = $data['city']['title'];
+        }
+        if (!empty($data['country'])) {
+            $data['country'] = $data['country']['title'];
+        }
+        return $data;
+    }
 }
