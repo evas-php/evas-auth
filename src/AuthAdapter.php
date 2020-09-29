@@ -158,11 +158,6 @@ class AuthAdapter
      */
     public static function run(string $source, string $action, array $params = null)
     {
-        $arr1 = ['a' => ['x' => 1, 'y' => 2], 'b' => 2];
-        $arr2 = ['a' => ['z' => 3], 'c' => 4];
-        $arr3 = array_merge_recursive($arr1, $arr2);
-        var_dump($arr3);
-        exit();
         // $controllerClass = static::$sources[$source] ?? null;
         // $sources = static::config()->get('sources') ?? [];
         // $controllerClass = $sources[$source] ?? null;
