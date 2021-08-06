@@ -1,31 +1,24 @@
 <?php
 /**
+ * Исключение авторизации.
  * @package evas-php\evas-auth
+ * @author Egor Vayakin <egor@evas-php.com>
  */
 namespace Evas\Auth;
 
-use Evas\Auth\AuthAdapter;
+use Evas\Auth\Auth;
 
-/**
- * Класс исключений авторизации.
- * @author Egor Vayakin <egor@evas-php.com>
- * @since 3 Sep 2020
- */
 class AuthException extends \Exception
 {
     /**
-     * Переопределяем конструктор.
-     * @param string текст сообщения
-     * @param int код исключения
-     * @param \Throwable|null предыдущее исключение
+     * Сборка исключения.
+     * @param string имя ошибки
+     * @param mixed|null аргументы для подстановки
+     * @return static
      */
-    public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
+    public static function build(string $errorName, ...$props)
     {
-        if (empty($message) && !empty($code)) {
-            // $message = AuthAdapter::ERRORS_MAP[$code] ?? '';
-            $errorsMap = AuthAdapter::config()->get('errors_map') ?? [];
-            $message = $errorsMap[$code] ?? '';
-        }
-        return parent::__construct($message, $code, $previous)
+        $message = Auth::getError($errorName);
+        return new static(sprintf($message, ...$props));
     }
 }
