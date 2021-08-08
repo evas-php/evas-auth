@@ -1,116 +1,166 @@
 <?php
 /**
+ * Модель гранта аутентификации.
  * @package evas-php\evas-auth
+ * @author Egor Vasyakin <egor@evas-php.com>
  */
 namespace Evas\Auth\Models;
 
-use Evas\Auth\AuthAdapter;
-use Evas\Auth\Helpers\Model;
+use Evas\Auth\Auth;
+use Evas\Auth\AuthException;
+use Evas\Auth\Help\Model;
 
-/**
- * Модель гранта авторизации.
- * @author Egor Vasyakin <egor@evas-php.com>
- * @since 14 Sep 2020
- */
 class AuthGrant extends Model
 {
-    /**
-     * @static int константы id статусов
-     */
-    const STATUS_INIT = 0;
-    const STATUS_CONFIRMED = 1;
-    const STATUS_UNACTIVE = 2;
-    const STATUS_OUTDATED = 3;
-
-    /**
-     * Поля записи.
-     * @var int $id UNSIGNED PRIMARY id записи
-     * @var int $user_id UNSIGNED INDEX id пользователя
-     * @var varchar(7) $source INDEX источник входа
-     * @var var_char(60) $login INDEX (+source) логин/id пользователя в источнике
-     * @var var_char(250) $token INDEX (+source) токен пользователя в источнике
-     * @var tinyint(3) $status статус
-     * @var json(512) $payload дополнительная нагрузка источника (для доп. параметров гугла, например)
-     * @var datetime $create_time время создания записи
-     */
+    /** @var int id гранта аутентификации */
     public $id;
+    /** @var int id пользователя */
     public $user_id;
+    /** @var string источник */
     public $source;
-    public $login;
-    public $token;
-    public $status;
-    public $payload;
+    /** @var string id пользователя в источнике или хеш пароля для гранта пароля */
+    public $source_key;
+    /** @var string время создания гранта */
     public $create_time;
 
-    // | id | user_id | source | login          | token         | payload | create_time |
-    // |------------------------------------------------------------------|-------------|
-    // |  1 |       1 | email  | test@test.test | password_hash | null    | datetime    |
-    // |  2 |       1 | vk     | 213214214      | vk_token      | null    | datetime    |
-    // |  3 |       1 | fb     | 123214214      | fb_token      | null    | datetime    |
-    // |  5 |       1 | google | gmail          | g_token       | {JSON}  | datetime    |
+    /**
+     * Проверка соответствия пароля хешу пароля гранта пароля.
+     * @param string пароль
+     * @return bool
+     */
+    public function checkPassword(string $password): bool
+    {
+        $this->throwIfNotPasswordGrant();
+        return password_verify($password, $this->source_key);
+    }
 
     /**
-     * Создание токена пользователя.
-     * @param int id пользователя
-     * @param string источник входа
-     * @param string логин/id источника
-     * @param string токен источника
+     * Изменение пароля.
+     * @param string старый пароль
+     * @param string новый пароль
      * @throws AuthException
+     */
+    public function changePassword(string $old, string $new)
+    {
+        if (!$this->checkPassword($old)) {
+            throw new AuthException('incorrect_password_old');
+        }
+        $this->setPasswordHash($new);
+    }
+
+    /**
+     * Установка хеша пароля.
+     * @param string пароль
+     */
+    protected function setPasswordHash(string $password)
+    {
+        $this->throwIfNotPasswordGrant();
+        $this->source_key = password_hash($password, PASSWORD_DEFAULT);
+        $this->save();
+    }
+
+    /**
+     * Является ли грантом пароля.
+     * @return bool
+     */
+    public function isPasswordGrant(): bool
+    {
+        return 'password' === $this->source;
+    }
+
+    /**
+     * Выбрасывание исключения если это не грант пароля.
+     * @throws AuthException
+     */
+    public function throwIfNotPasswordGrant()
+    {
+        if (!$this->isPasswordGrant()) {
+            throw new AuthException('Is not password grant!');
+        }
+    }
+
+    /**
+     * Выбрасывание исключения, если источник не поддерживается.
+     * @param string источник
+     * @throws AuthException
+     */
+    public static function throwIfSourceNotSupported(string $source)
+    {
+        if (!Auth::isSupportedSource($source)) {
+            throw new AuthException('auth source not supported');
+        }
+    }
+
+    /**
+     * Создание гранта пароля.
+     * @param int id пользователя
+     * @param string пароль
      * @return static
      */
-    public static function make(int $user_id, string $source, string $login, string $token): AuthGrant
+    public static function createWithPassword(int $user_id, string $password)
     {
-        // валидация!
-        // if (!in_array($source, static::SOURCES)) {
-        //     throw new AuthException(static::setMessageVarsStatic(
-        //         static::ERROR_INCORRECT_AUTH_SOURCE, compact('source')
-        //     ));
-        // }
-        return static::insert(compact('user_id', 'source', 'login', 'token'));
+        static::throwIfSourceNotSupported('password');
+        $grant = new static([
+            'user_id' => $user_id,
+            'source' => 'password',
+        ]);
+        $grant->setPasswordHash($password);
+        return $grant;
     }
 
     /**
-     * Поиск по токену источника.
-     * @param string токена
+     * Создание внешнего гранта.
+     * @param id пользователя
      * @param string источник
+     * @param string ключ источника (id/email/etc.)
+     * @return static
+     */
+    public static function createForeign(int $user_id, string $source, string $source_key)
+    {
+        static::throwIfSourceNotSupported($source);
+        return new static(compact('user_id', 'source', 'source_key'));
+    }
+
+    /**
+     * Поиск внешнего гранта по источнику и ключу.
+     * @param string источник
+     * @param string ключ источника
      * @return static|null
      */
-    public static function findBySourceToken(string $source, string $token): ?AuthGrant
+    public static function findForeign(string $source, string $source_key): ?AuthGrant
     {
-        return static::find()
-            ->where('source = ? AND token = ?', [$source, $token])
-            ->one()->classObject(static::class);
+        return static::find()->where(
+            '`source` = ? AND `source_key` = ?',
+            [$source, $source_key]
+        )->one()->classObject(static::class);
     }
 
     /**
-     * Обновление статуса на подтверждено.
-     * @return self
+     * Поиск грантов по id пользователя.
+     * @param int id пользователя
+     * @param ...string|null источники
+     * @return array of static
      */
-    public function confirm(): AuthGrant
+    public static function findByUserId(int $user_id, string ...$sources): array
     {
-        $this->status = static::STATUS_CONFIRMED;
-        return $this->save();
+        $qb = static::find()->where('`user_id` = ?', [$user_id]);
+        if (!empty($sources)) {
+            $qb->where(' AND ');
+            $qb->whereIn('`source`', $sources);
+        }
+        return $qb->query()->classObjectAll();
     }
 
     /**
-     * Восстановление гранта авторизации с сохранением.
-     * @param string новый токен (пароль)
-     * @return self
+     * Поиск гранта пароля по id пользователя.
+     * @param int id пользователя
+     * @return static|null
      */
-    public function recovery(string $token): AuthGrant
+    public static function findWithPasswordByUserId(int $user_id): ?AuthGrant
     {
-        $this->token = $token;
-        return $this->confirm();
-    }
-
-    /**
-     * Получение строкового статуса.
-     * @return string
-     */
-    public function getStringStatus(): string
-    {
-        return sprintf(AuthAdapter::config()->get('auth_grant_status_string_format'),
-            $this->source, AuthAdapter::getConfigListItem('auth_grant_statuses_map', $this->status)
-        );
+        return static::find()->where(
+            '`source` = ? AND `user_id` = ? ',
+            ['password', $user_id]
+        )->one()->classObject(static::class);
     }
 }
