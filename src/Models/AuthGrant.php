@@ -86,9 +86,7 @@ class AuthGrant extends Model
      */
     public static function throwIfSourceNotSupported(string $source)
     {
-        if (!Auth::isSupportedSource($source)) {
-            throw new AuthException('auth source not supported');
-        }
+        Auth::throwIfNotSupportedSource($source);
     }
 
     /**
@@ -96,10 +94,15 @@ class AuthGrant extends Model
      * @param int id пользователя
      * @param string пароль
      * @return static
+     * @throws AuthException
      */
     public static function createWithPassword(int $user_id, string $password)
     {
         static::throwIfSourceNotSupported('password');
+        $grant = static::findWithPasswordByUserId($user_id);
+        if ($grant) {
+            throw AuthException::build('password_grant_already_exists');
+        }
         $grant = new static([
             'user_id' => $user_id,
             'source' => 'password',
