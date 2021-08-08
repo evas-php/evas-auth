@@ -1,95 +1,216 @@
 <?php
 /**
+ * Модель сессии аутентификации.
  * @package evas-php\evas-auth
+ * @author Egor Vasyakin <egor@evas-php.com>
  */
 namespace Evas\Auth\Models;
 
-use Evas\Auth\AuthAdapter;
-use Evas\Auth\Helpers\Model;
+use Evas\Auth\Auth;
+use Evas\Auth\Help\Model;
+use Evas\Auth\Help\Token;
+use Evas\Base\App;
+use Evas\Http\Interfaces\RequestInterface;
 
-/**
- * Модель сессии авторизации.
- * @author Egor Vasyakin <e.vasyakin@itevas.ru>
- * @since 14 Sep 2020
- */
 class AuthSession extends Model
 {
-    /**
-     * Поля записи.
-     * @var int $id UNSIGNED PRIMARY id записи
-     * @var int $user_id UNSIGNED INDEX id пользователя
-     * @var int $auth_grant_id UNSIGNED INDEX id гранта авторизации
-     * @var varchar(60) $token UNIQUE токен пользователя
-     * @var varchar(15) $user_ip ip пользователя
-     * @var varchar(250) $user_agent user_agent пользователя
-     * @var datetime $end_time время истечения токена
-     * @var datetime $create_time время создания записи
-     */
+    /** @var int id сессии */
     public $id;
+    /** @var int id пользователя */
     public $user_id;
-    public $auth_grant_id;
+    /** @var string токен сессии (для JWT - recovery token) */
     public $token;
+    /** @var int id гранта аутентификации */
+    public $auth_grant_id;
+    /** @var string токен гранта внешнего ресурса */
+    public $grant_token;
+    /** @var string ip пользователя */
     public $user_ip;
+    /** @var string заголовок User-Agent пользователя */
     public $user_agent;
-    public $end_time;
+    /** @var string семейство операционной системы пользователя */ 
+    public $user_os;
+    /** @var string семейство браузера пользователя */
+    public $user_browser;
+    /** @var string время создания */
     public $create_time;
-
-    // | id | user_id | auth_grant_id | token | user_ip | user_agent | user_browser | user_os | end_time | create_time |
-    // |---------------------------------------------------------------------------------------------------------------|
-    // |  1 |       1 |             1 | token | 1.1.1.1 | Firefox... | Firefox      | Windows | datetime | datetime    |
-    // |  1 |       2 |             2 | token | 1.1.1.1 | Chrome...  | Chrome       | MacOS   | datetime | datetime    |
-
+    /** @var string время просрочки */
+    public $end_time;
 
     /**
-     * Получение записи по токену.
-     * @param string
-     * @return static|null
-     */
-    public static function findByToken(string $token): ?AuthSession
-    {
-        return static::find()->where('token = ?', [$token])->one()->classObject(static::class);
-    }
-
-    /**
-     * @deprecated Получение версии ос и браузера из юзер агента.
-     * @param string user agent
-     * @return array [browser,os]
-     */
-    public static function parseUserAgent(string $userAgent): array
-    {
-        $user_agent_sliced = preg_split("/^([^(]+)\/\S+?\s\(([^;)]+)?;?([^;)]+)?;?[^)]+?\) ?(.+\/\S+?)?\S?(.+\/\S+?)?$/m", $user_agent, -1, PREG_SPLIT_DELIM_CAPTURE);
-        $user_browser = $user_agent_sliced[1];
-        $user_os = isset($user_agent_sliced[2]) ? $user_agent_sliced[2] . ' ' : '' . isset($user_agent_sliced[3]) ? $user_agent_sliced[3] : '';
-        return [$user_browser, $user_os];
-    }
-
-    /**
-     * Авторизация.
-     * Создание/обновление записи авторизации и запись токена в cookie.
-     * @param AuthGrant гарант авторизации
+     * Вход.
+     * @param AuthGrant грант аутентификации
+     * @param RequestInterface запрос
+     * @param string|null токен гранта аутентификации
      * @return static
      */
-    public static function login(AuthGrant $authGrant): AuthSession
+    public static function createOrUpdate(
+        AuthGrant &$grant, 
+        RequestInterface &$request, 
+        string $grant_token = null
+    ): AuthSession
     {
-        $user_id = $authGrant->user_id;
-        $auth_grant_id = $authGrant->id;
-        $user_ip = App::request()->getUserIp();
-        $user_agent = App::request()->getHeader('User-Agent');        
-
-        $end_time = date('Y-m-d h:i:s', time() + AuthAdapter::AUTH_TOKEN_ALIVE);
-
-        $auth = static::find()
-            ->where('user_id = ? AND user_ip = ? AND user_agent = ?', [$user_id, $user_ip, $user_agent])
-            ->one()->classObject(static::class);
-
-        if ($auth) {
-            $auth->end_time = $end_time;
-            return $auth->save();
-        }
+        $user_id = $grant->user_id;
+        $auth_grant_id = $grant->id;
+        $user_ip = $request->getUserIp();
+        $user_agent = $request->getHeader('User-Agent');
         $token = Token::generateUniqueIn(static::tableName());
-        (new Cookie)
-            ->withHost(App::host())
-            ->set(AuthAdapter::AUTH_TOKEN_COOKIE_NAME, $auth->token, AuthAdapter::AUTH_TOKEN_ALIVE);
-        return static::insert(compact('user_id', 'auth_grant_id', 'user_ip', 'user_agent', 'end_time', 'token'));
+
+        $session = static::find()->where(
+            'user_id = ? AND auth_grant_id = ? AND user_ip = ? AND user_agent = ?', 
+            [$user_id, $auth_grant_id, $user_ip, $user_agent]
+        )->one()->classObject(static::class);
+
+        if (empty($session)) {
+            list($user_browser, $user_os) = $request->parseUserAgent();
+            $session = static::create(compact(
+                'user_id', 'token', 'auth_grant_id', 'grant_token',
+                'user_ip', 'user_agent', 'user_os', 'user_browser'
+            ));
+        } else {
+            $session->token = $token;
+        }
+        $session->updateEndTime();
+        return $session;
+    }
+
+    /**
+     * Выход из одной или нескольких сессий.
+     * @param enum of AuthSession сессии через запятую
+     */
+    public static function logout(AuthSession ...$sessions)
+    {
+        $loggedUserId = Auth::loggedUserId();
+        foreach ($sessions as &$session) {
+            if ($session->user_id === $loggedUserId) {
+                $session->leave(false);
+            }
+        }
+    }
+
+    /**
+     * Выход из сессии.
+     */
+    public function leave()
+    {
+        return $this->updateEndTime(-1); 
+    }
+
+    /**
+     * Обновление времени истечения сессии.
+     * @param int сдвиг времени относительно текущего
+     */
+    protected function updateEndTime(int $alive = null)
+    {
+        if (null === $alive) {
+            $alive = Auth::config()['token_alive'];
+        }
+        $this->end_time = date('Y-m-d H:i:s', time() + $alive);
+        $this->save();
+        // $this->afterUpdateEndTime($withCookie);
+    }
+
+    // /**
+    //  * Хук после обновления времени истечения сессиии для установки cookie.
+    //  * @param bool|true установить ли при этом cookie
+    //  */
+    // protected function afterUpdateEndTime(bool $withCookie = true)
+    // {
+    //     if (true === $withCookie) {
+    //         $this->setCookieToken();
+    //     }
+    // }
+
+    // /**
+    //  * Установка токена сессии в cookie.
+    //  */
+    // protected function setCookieToken()
+    // {
+    //     $config = Auth::config();
+    //     $name = $config->get('auth_token_cookie_name');
+    //     $path = $config->get('auth_token_cookie_path');
+    //     $host = $config->get('auth_token_cookie_host');
+    //     $time = strtotime($this->end_time);
+    //     setcookie($name, $this->token, $time, $path, $host, false, true);
+    // }
+
+    /**
+     * Проверка является ли сессия актуальной.
+     * @return bool
+     */
+    public function isActual(): bool
+    {
+        return strtotime($this->end_time) > time();
+    }
+
+    /**
+     * Поиск сессии по токену.
+     * @param string токен
+     * @param bool|false искать ли только актуальные
+     * @return ?static
+     */
+    public static function findByToken(string $token, bool $actual = false): ?AuthSession
+    {
+        $where = 'token = ?';
+        if (true === $actual) $where .= ' AND end_time > NOW()';
+        return static::find()->where($where, [$token])
+        ->one()->classObject(static::class);
+    }
+
+    /**
+     * Поиск актуальной сессии по токену.
+     * @param string токен
+     * @return ?static
+     */
+    public static function findActualByToken(string $token): ?AuthSession
+    {
+        return static::findByToken($token, true);
+    }
+
+    /**
+     * Поиск актуальной сессии по токену с получением id пользователя.
+     * @param string токен
+     * @return int|null id пользователя
+     */
+    public static function findUserIdByToken(string $token): ?int
+    {
+        $session = static::findActualByToken($token);
+        return $session ? $session->user_id : null;
+    }
+
+    /**
+     * Поиск сессий по id пользователя.
+     * @param int id пользователя
+     * @param bool|false искать ли только актуальные
+     * @return array
+     */
+    public static function findByUserId(int $user_id, bool $actual = false): array
+    {
+        $where = 'user_id = ?';
+        if (true === $actual) $where .= ' AND end_time > NOW()';
+        return static::find()->where($where, [$user_id])
+        ->query()->classObjectAll(static::class);
+    }
+
+    /**
+     * Поиск актуальных сессий по id пользователя.
+     * @param int id пользователя
+     * @return array
+     */
+    public static function findActualByUserId(int $user_id): array
+    {
+        return static::findByUserId($user_id, true);
+    }
+
+    public static function setCookieToken(string $token, int $alive = null)
+    {
+        // (new Cookie)
+        //     ->withHost(App::host())
+        //     ->set(Auth::AUTH_TOKEN_COOKIE_NAME, $token, $alive);
+        if (!$alive) $alive = Auth::config()['token_alive'];
+        $name = Auth::config()['token_cookie_name'];
+        $path = '/';
+        $host = App::uri()->getHost();
+        setcookie($name, $token, time() + $alive, $path, $host, false, true);
     }
 }
