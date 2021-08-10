@@ -8,6 +8,7 @@ namespace Evas\Auth\Models;
 
 use Evas\Auth\AuthException;
 use Evas\Auth\Help\Model;
+use Evas\Auth\Help\Token;
 
 class AuthConfirm extends Model
 {
@@ -59,7 +60,7 @@ class AuthConfirm extends Model
     }
 
     /**
-     * Создание восстановления через email.
+     * Создание подтверждения через email.
      * @param int id пользователя
      * @param string email
      * @return static
@@ -73,7 +74,7 @@ class AuthConfirm extends Model
     }
 
     /**
-     * Создание восстановления через телефон.
+     * Создание подтверждения через телефон.
      * @param int id пользователя
      * @param string номер телефона
      * @return static
@@ -87,12 +88,22 @@ class AuthConfirm extends Model
     }
 
     /**
-     * Генерация кода для восстановления.
+     * Подтверждение email.
+     * @param string email
+     * @param string код подтверждения
+     */
+    public static function completeEmail(string $email, string $code)
+    {
+        // 
+    }
+
+    /**
+     * Генерация кода для подтверждения.
      * @return string
      */
     public static function generateCode(): string
     {
-        return '';
+        return Token::generateUniqueIn([static::tableName(), 'code'], 6);
     }
 
     /**
