@@ -43,7 +43,7 @@ class AuthGrant extends Model
     public function changePassword(string $old, string $new)
     {
         if (!$this->checkPassword($old)) {
-            throw new AuthException('incorrect_password_old');
+            throw AuthException::build('incorrect_password_old');
         }
         $this->setPasswordHash($new);
     }
