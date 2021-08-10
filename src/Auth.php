@@ -168,7 +168,6 @@ class Auth extends Facade
      */
     protected function supportedSources(): array
     {
-        // $supported = [];
         $supported = array_keys($this->config()['foreigns']);
         if ($this->config()['password_enable']) $supported[] = 'password';
         return $supported;
@@ -232,11 +231,11 @@ class Auth extends Facade
     /**
      * Авторизация во внешнем источнике.
      * @param string источник
-     * @param array параметры запроса
-     * @return LoginUserInterface
+     * @param array параметры запроса\
+     * @return int id пользователя
      * @throws AuthException
      */
-    protected function foreignAuth(string $source, array $payload): LoginUserInterface
+    protected function foreignAuth(string $source, array $payload): int
     {
         $oauth = $this->getOauth($source);
         $oauth->resolveLogin($payload);
@@ -249,13 +248,11 @@ class Auth extends Facade
 
             $grant = AuthGrant::createForeign($user->id, $source, $sourceKey);
             $grant->save();
-        } else {
-            $user = $this->userModel()::findById($grant->user_id);
         }
         $request = App::request();
         $session = AuthSession::createOrUpdate($grant, $request, $oauth->getAccessToken());
         AuthSession::setCookieToken($session->token);
-        return $user;
+        return $grant->user_id;
     }
 
     /**
@@ -303,8 +300,91 @@ class Auth extends Facade
             }
         }
         $user = $this->userModel()::insertByPassword($data);
-        $grant = AuthGrant::createWithPassword($user->id, $data['password']);
+        AuthGrant::createWithPassword($user->id, $data['password']);
         return $user;
+    }
+
+    /**
+     * Смена пароля пользователя.
+     * @param int id пользователя
+     * @param string старый пароль
+     * @param string новый пароль
+     * @throws AuthException
+     */
+    protected function changePassword(int $user_id, string $password_old, string $password)
+    {
+        $grant = AuthGrant::findWithPasswordByUserId($user_id);
+        if (!$grant) throw AuthException::build('password_grant_not_found');
+        $grant->changePassword($password_old, $password);
+    }
+
+    /**
+     * Установка пароля пользователя.
+     * @param int id пользователя
+     * @param string пароль
+     * @throws AuthException
+     */
+    protected function setPassword(int $user_id, string $password)
+    {
+        AuthGrant::createWithPassword($user_id, $password);
+    }
+
+    /**
+     * Начало авторизации по отправленному на телефон/email коду.
+     * @param array данные запроса
+     * @return LoginUserInterface
+     */
+    protected function codeAuthInit(array $payload)
+    {
+        $this->throwIfNotSupportedSource('code');
+        // $data = $this->userModel()::validateCode($payload);
+        $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
+        $user = $this->userModel()::findByUniqueKeys($keys);
+        if (!$user) {
+            $user = $this->userModel()::insertByCode($data);
+        }
+        // $confirm = AuthConfirm::createToEmail()
+        return $confirm->code;
+    }
+
+    /**
+     * Авторизаци по отправленному на телефон/email коду.
+     * @param array данные запроса
+     * @return LoginUserInterface|null
+     */
+    protected function codeAuth(array $payload): ?LoginUserInterface
+    {
+        $this->throwIfNotSupportedSource('code');
+        $data = $this->userModel()::validateCode($payload);
+        $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
+        $user = $this->userModel()::findByUniqueKeys($keys);
+        if (!$user) {
+            throw AuthException::build('user_not_found');
+        }
+        if (AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
+            return $user;
+        }
+        return null;
+    }
+
+    /**
+     * Создание подтвержения email.
+     * @param int id пользователя
+     * @param string источник получения подтверждения
+     */
+    protected function createConfirmToEmail(int $user_id, string $to)
+    {
+        return AuthConfirm::createToEmail($user_id, $to);
+    }
+
+    /**
+     * Создание подтвержения телефона.
+     * @param int id пользователя
+     * @param string источник получения подтверждения
+     */
+    protected function createConfirmToPhone(int $user_id, string $to)
+    {
+        return AuthConfirm::createToPhone($user_id, $to);
     }
 
     /**
@@ -314,7 +394,7 @@ class Auth extends Facade
     protected function loggedUserId(): ?int
     {
         if (false === $this->user_id) {
-            $token = $_COOKIE['token'] ?? null;
+            $token = $_COOKIE[$this->config['token_cookie_name']] ?? null;
             $this->user_id = $token ? $this->loggedUserIdByToken($token) : null;
         }
         return $this->user_id;
