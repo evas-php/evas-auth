@@ -12,14 +12,24 @@ interface LoginUserInterface
      * Добавление пользователя по внешней авторизации.
      * @param string источник
      * @param array данные пользователя
+     * @return static
      */
-    public static function insertByForeign(string $source, array $data);
+    public static function insertByForeign(string $source, array $data): LoginUserInterface;
+
+    /**
+     * Установка данных пользователя, полученных из внешней авторизации.
+     * @param string источник
+     * @param array данные пользователя
+     * @return self
+     */
+    public function setForeignData(string $source, array $data): LoginUserInterface;
 
     /**
      * Добавление пользователя по паролю.
      * @param array данные пользователя
+     * @return static
      */
-    public static function insertByPassword(array $data);
+    public static function insertByPassword(array $data): LoginUserInterface;
 
     /**
      * Валидация для входа по паролю.
@@ -53,5 +63,5 @@ interface LoginUserInterface
      * @param array данные
      * @return static|null
      */
-    public static function findByUniqueKeys(array $data);
+    public static function findByUniqueKeys(array $data): ?LoginUserInterface;
 }
