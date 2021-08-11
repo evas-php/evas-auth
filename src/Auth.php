@@ -7,6 +7,9 @@
 namespace Evas\Auth;
 
 use Evas\Auth\AuthException;
+use Evas\Auth\Actions\CodeAuth;
+use Evas\Auth\Actions\ForeignAuth;
+use Evas\Auth\Actions\PasswordAuth;
 use Evas\Auth\Interfaces\LoginUserInterface;
 use Evas\Auth\Interfaces\OauthInterface;
 use Evas\Auth\Models\AuthGrant;
@@ -14,6 +17,7 @@ use Evas\Auth\Models\AuthSession;
 use Evas\Base\App;
 use Evas\Base\Help\Facade;
 use Evas\Db\Interfaces\DatabaseInterface;
+use Evas\Http\Interfaces\RequestInterface;
 
 class Auth extends Facade
 {
@@ -170,6 +174,7 @@ class Auth extends Facade
     {
         $supported = array_keys($this->config()['foreigns']);
         if ($this->config()['password_enable']) $supported[] = 'password';
+        if ($this->config()['code_enable']) $supported[] = 'code';
         return $supported;
     }
 
@@ -217,6 +222,42 @@ class Auth extends Facade
     }
 
     /**
+     * Получение объекта запроса.
+     * @return RequestInterface
+     */
+    protected function getRequest(): RequestInterface
+    {
+        return App::request();
+    }
+
+    /**
+     * Установка cookie с токеном.
+     * @param string токен
+     * @param int|null дельта времени жизни cookie
+     */
+    protected function setCookieToken(string $token, int $alive = null)
+    {
+        if (!$alive) $alive = Auth::config()['token_alive'];
+        $name = Auth::config()['token_cookie_name'];
+        $path = '/';
+        $host = App::uri()->getHost();
+        setcookie($name, $token, time() + $alive, $path, $host, false, true);
+    }
+
+    /**
+     * Создание или обновление сессии авторизации.
+     * @param AuthGrant грант авторизации
+     * @param string|null токен гранта аутентификации
+     * @return AuthSession
+     */
+    protected function makeSession(AuthGrant &$grant, string $grant_token = null): AuthSession
+    {
+        $session = AuthSession::createOrUpdate($grant, $grant_token);
+        $this->setCookieToken($session->token);
+        return $session;
+    }
+
+    /**
      * Получение ссылки внешней авторизации.
      * @param string источник
      * @return string
@@ -224,12 +265,12 @@ class Auth extends Facade
      */
     protected function foreignAuthLink(string $source): string
     {
-        $oauth = $this->getOauth($source);
-        return $oauth->getAuthLink();
+        return ForeignAuth::getLink($source);
+        // return $this->getOauth($source)->getAuthLink();
     }
 
     /**
-     * Авторизация во внешнем источнике.
+     * Авторизация через внешний источник.
      * @param string источник
      * @param array параметры запроса\
      * @return int id пользователя
@@ -237,22 +278,22 @@ class Auth extends Facade
      */
     protected function foreignAuth(string $source, array $payload): int
     {
-        $oauth = $this->getOauth($source);
-        $oauth->resolveLogin($payload);
-        $sourceKey = $oauth->getSourceKey();
+        return ForeignAuth::login($source, $payload);
+        // $oauth = $this->getOauth($source);
+        // $oauth->resolveLogin($payload);
+        // $sourceKey = $oauth->getSourceKey();
 
-        $grant = AuthGrant::findForeign($source, $sourceKey);
-        if (!$grant) {
-            $data = $oauth->getData();
-            $user = $this->userModel()::insertByForeign($source, $data);
+        // $grant = AuthGrant::findForeign($source, $sourceKey);
+        // if (!$grant) {
+        //     $data = $oauth->getData();
+        //     $user = $this->userModel()::insertByForeign($source, $data);
 
-            $grant = AuthGrant::createForeign($user->id, $source, $sourceKey);
-            $grant->save();
-        }
-        $request = App::request();
-        $session = AuthSession::createOrUpdate($grant, $request, $oauth->getAccessToken());
-        AuthSession::setCookieToken($session->token);
-        return $grant->user_id;
+        //     $grant = AuthGrant::createForeign($user->id, $source, $sourceKey);
+        //     $grant->save();
+        // }
+        // $session = AuthSession::createOrUpdate($grant, $oauth->getAccessToken());
+        // AuthSession::setCookieToken($session->token);
+        // return $grant->user_id;
     }
 
     /**
@@ -263,23 +304,23 @@ class Auth extends Facade
      */
     protected function passwordAuth(array $payload = null): LoginUserInterface
     {
-        $this->throwIfNotSupportedSource('password');
+        return PasswordAuth::login($payload);
+        // $this->throwIfNotSupportedSource('password');
         
-        $data = $this->userModel()::validateLogin($payload);
-        $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        $user = $this->userModel()::findByUniqueKeys($keys);
+        // $data = $this->userModel()::validateLogin($payload);
+        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
+        // $user = $this->userModel()::findByUniqueKeys($keys);
 
-        if (!$user) {
-            throw AuthException::build('user_not_found');
-        }
-        $grant = AuthGrant::findWithPasswordByUserId($user->id);
-        if (!$grant->checkPassword($data['password'])) {
-            throw AuthException::build('user_fail_password');
-        }
-        $request = App::request();
-        $session = AuthSession::createOrUpdate($grant, $request);
-        AuthSession::setCookieToken($session->token);
-        return $user;
+        // if (!$user) {
+        //     throw AuthException::build('user_not_found');
+        // }
+        // $grant = AuthGrant::findWithPasswordByUserId($user->id);
+        // if (!$grant->checkPassword($data['password'])) {
+        //     throw AuthException::build('user_fail_password');
+        // }
+        // $session = AuthSession::createOrUpdate($grant);
+        // AuthSession::setCookieToken($session->token);
+        // return $user;
     }
 
     /**
@@ -290,18 +331,19 @@ class Auth extends Facade
      */
     protected function passwordRegistration(array $payload = null): LoginUserInterface
     {
-        $this->throwIfNotSupportedSource('password');
-        $data = $this->userModel()::validateRegistration($payload);
-        $user = $this->userModel()::findByUniqueKeys($data);
-        if ($user) foreach ($this->userModel()::uniqueKeys() as &$key) {
-            if (isset($data[$key]) && $user->$key === $data[$key]) {
-                $label = $this->userModel()::getUniqueKeyLabel($key);
-                throw AuthException::build('user_already_exists', $label);
-            }
-        }
-        $user = $this->userModel()::insertByPassword($data);
-        AuthGrant::createWithPassword($user->id, $data['password']);
-        return $user;
+        return PasswordAuth::registration($payload);
+        // $this->throwIfNotSupportedSource('password');
+        // $data = $this->userModel()::validateRegistration($payload);
+        // $user = $this->userModel()::findByUniqueKeys($data);
+        // if ($user) foreach ($this->userModel()::uniqueKeys() as &$key) {
+        //     if (isset($data[$key]) && $user->$key === $data[$key]) {
+        //         $label = $this->userModel()::getUniqueKeyLabel($key);
+        //         throw AuthException::build('user_already_exists', $label);
+        //     }
+        // }
+        // $user = $this->userModel()::insertByPassword($data);
+        // AuthGrant::createWithPassword($user->id, $data['password']);
+        // return $user;
     }
 
     /**
@@ -313,9 +355,10 @@ class Auth extends Facade
      */
     protected function changePassword(int $user_id, string $password_old, string $password)
     {
-        $grant = AuthGrant::findWithPasswordByUserId($user_id);
-        if (!$grant) throw AuthException::build('password_grant_not_found');
-        $grant->changePassword($password_old, $password);
+        return PasswordAuth::changePassword($user_id, $password_old, $password);
+        // $grant = AuthGrant::findWithPasswordByUserId($user_id);
+        // if (!$grant) throw AuthException::build('password_grant_not_found');
+        // $grant->changePassword($password_old, $password);
     }
 
     /**
@@ -326,7 +369,8 @@ class Auth extends Facade
      */
     protected function setPassword(int $user_id, string $password)
     {
-        AuthGrant::createWithPassword($user_id, $password);
+        return PasswordAuth::setPassword($user_id, $password);
+        // AuthGrant::createWithPassword($user_id, $password);
     }
 
     /**
@@ -427,44 +471,4 @@ class Auth extends Facade
         $db = $this->db;
         return $db($dbname);
     }
-
-
-
-
-    // public static $foreign = [
-    //     'password', 'vk', 'fb', 'goolge', 
-    // ];
-
-    // public static $registerSources = [];
-
-    // public static function setConfig(array $config)
-    // {
-    //     static::$config = $config;
-    // }
-
-    // public static function supportedSources(): array
-    // {
-    //     return ['fake'];
-    //     // return static::$foreign;
-    // }
-
-    // public static function isSupportedSource($source): bool
-    // {
-    //     return in_array($source, static::supportedSources());
-    // }
-
-    // public static function foreignCallback(callable $loggedCallback)
-    // {
-    //     static::$foreignCallback = $loggedCallback;
-    // }
-
-    // public static function registerForeign(string $name, array $config = null, callable $loggedCallback = null)
-    // {
-    //     static::$foreign[$name] = new ForeignAuth($config, $loggedCallback);
-    // }
-
-    // public static function catchLogged(string $source, array $args = null)
-    // {
-    //     // 
-    // }
 }
