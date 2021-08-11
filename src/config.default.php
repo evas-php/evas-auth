@@ -5,7 +5,6 @@
  * @author Egor Vasyakin <egor@evas-php.com>
  */
 
-use Evas\Auth\Auth as A;
 use Evas\Auth\Models\AuthConfirm;
 use Evas\Auth\Models\AuthGrant;
 use Evas\Auth\Models\AuthRecovery;
@@ -66,6 +65,7 @@ return [
         AuthRecovery::class => 'auth_recovery',
     ],
     'password_enable' => true,
+    'code_enable' => true,
     'foreignClasses' => [
         'fb' => FbOauth::class,
         'google' => GoogleOauth::class,
@@ -76,7 +76,7 @@ return [
         // 'google' => [],
         // 'vk' => [],
     ],
-    'user_models' => [],
+    // 'user_models' => [],
     'token_cookie_name' => 'token',
     'token_alive' => 2592000,
     'token_generate_max_tries' => 20,
