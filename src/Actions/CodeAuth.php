@@ -15,9 +15,9 @@ class CodeAuth
      * Начало авторизации по отправленному на телефон/email коду.
      * @param string тип авторизации
      * @param array|null данные запроса
-     * @return string код
+     * @return string код подтверждения
      */
-    public static function init(string $type, array $payload = null): string
+    public static function getCode(string $type, array $payload = null): string
     {
         // 0. Проверяем поддержку входа по коду
         Auth::throwIfNotSupportedSource('code');
@@ -44,7 +44,7 @@ class CodeAuth
      * @param array|null данные запроса
      * @return LoginUserInterface|null
      */
-    protected function codeAuth(string $type, array $payload = null): ?LoginUserInterface
+    protected function login(string $type, array $payload = null): ?LoginUserInterface
     {
         // 0. Проверяем поддержку входа по коду
         Auth::throwIfNotSupportedSource('code');
@@ -59,11 +59,16 @@ class CodeAuth
             throw AuthException::build('user_not_found');
         }
         // 3. Ищем AuthConfirm с таким кодом для этого пользователя
-        // - ошибка, если AuthConfirm не найден
-        // 4. Подтверждаем AuthConfirm
-        if (!AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
-            return null;
+        $confirm = AuthConfirm::findByUserIdAndCode($user->id, $data['code']);
+        if (!$confirm) {
+            // - ошибка, если AuthConfirm не найден
+            throw AuthException::build('code_is_not_active');
         }
+        // 4. Подтверждаем AuthConfirm
+        $confirm->complete();
+        // if (!AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
+            // return null;
+        // }
         // 5. Создаём или обновляем AuthSession пользователя
         $session = Auth::makeSession($grant);
         // 6. Возвращаем пользователя
