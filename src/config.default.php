@@ -38,6 +38,8 @@ return [
         'password_grant_not_found' => 'Вход по паролю не установлен для пользователя',
         'password_grant_already_exists' => 'Авторизация по паролю для пользователя уже установлена',
         'incorrect_password_old' => 'Старый пароль введён неверно',
+        'code_is_not_active' => 'Код подтверждения не активен',
+        'code_is_outdated' => 'Код подтверждения устарел',
         // A::ERROR_SOURCE_CONTROLLER_NOT_SUPPORTED => 'Обработчик авторизации через %s не поддерживается',
         // A::ERROR_SOURCE_CONTROLLER_NOT_FOUND => 'Обработчик авторизации через %s не найден',
         // A::ERROR_SOURCE_CONTROLLER_ACTION_NOT_FOUND => 'Действие %s обработчика авторизации через %s не найдено',
