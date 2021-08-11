@@ -44,7 +44,7 @@ class CodeAuth
      * @param array|null данные запроса
      * @return LoginUserInterface|null
      */
-    protected function login(string $type, array $payload = null): ?LoginUserInterface
+    protected function login(array $payload = null): ?LoginUserInterface
     {
         // 0. Проверяем поддержку входа по коду
         Auth::throwIfNotSupportedSource('code');
