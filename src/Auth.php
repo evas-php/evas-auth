@@ -376,19 +376,20 @@ class Auth extends Facade
     /**
      * Начало авторизации по отправленному на телефон/email коду.
      * @param array данные запроса
-     * @return LoginUserInterface
+     * @return string код подтверждения
      */
-    protected function codeAuthInit(array $payload)
+    protected function codeAuthInit(array $payload): string
     {
-        $this->throwIfNotSupportedSource('code');
-        // $data = $this->userModel()::validateCode($payload);
-        $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        $user = $this->userModel()::findByUniqueKeys($keys);
-        if (!$user) {
-            $user = $this->userModel()::insertByCode($data);
-        }
-        // $confirm = AuthConfirm::createToEmail()
-        return $confirm->code;
+        return CodeAuth::getCode($payload);
+        // $this->throwIfNotSupportedSource('code');
+        // // $data = $this->userModel()::validateCode($payload);
+        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
+        // $user = $this->userModel()::findByUniqueKeys($keys);
+        // if (!$user) {
+        //     $user = $this->userModel()::insertByCode($data);
+        // }
+        // // $confirm = AuthConfirm::createToEmail()
+        // return $confirm->code;
     }
 
     /**
@@ -398,17 +399,18 @@ class Auth extends Facade
      */
     protected function codeAuth(array $payload): ?LoginUserInterface
     {
-        $this->throwIfNotSupportedSource('code');
-        $data = $this->userModel()::validateCode($payload);
-        $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        $user = $this->userModel()::findByUniqueKeys($keys);
-        if (!$user) {
-            throw AuthException::build('user_not_found');
-        }
-        if (AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
-            return $user;
-        }
-        return null;
+        return CodeAuth::login($payload);
+        // $this->throwIfNotSupportedSource('code');
+        // $data = $this->userModel()::validateCode($payload);
+        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
+        // $user = $this->userModel()::findByUniqueKeys($keys);
+        // if (!$user) {
+        //     throw AuthException::build('user_not_found');
+        // }
+        // if (AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
+        //     return $user;
+        // }
+        // return null;
     }
 
     /**
