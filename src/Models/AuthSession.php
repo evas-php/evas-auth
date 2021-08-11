@@ -40,16 +40,17 @@ class AuthSession extends Model
     /**
      * Вход.
      * @param AuthGrant грант аутентификации
-     * @param RequestInterface запрос
      * @param string|null токен гранта аутентификации
+     * @param RequestInterface запрос
      * @return static
      */
     public static function createOrUpdate(
         AuthGrant &$grant, 
-        RequestInterface &$request, 
-        string $grant_token = null
+        string $grant_token = null,
+        RequestInterface &$request = null
     ): AuthSession
     {
+        if (!$request) $request = Auth::getRequest();
         $user_id = $grant->user_id;
         $auth_grant_id = $grant->id;
         $user_ip = $request->getUserIp();
@@ -200,17 +201,5 @@ class AuthSession extends Model
     public static function findActualByUserId(int $user_id): array
     {
         return static::findByUserId($user_id, true);
-    }
-
-    public static function setCookieToken(string $token, int $alive = null)
-    {
-        // (new Cookie)
-        //     ->withHost(App::host())
-        //     ->set(Auth::AUTH_TOKEN_COOKIE_NAME, $token, $alive);
-        if (!$alive) $alive = Auth::config()['token_alive'];
-        $name = Auth::config()['token_cookie_name'];
-        $path = '/';
-        $host = App::uri()->getHost();
-        setcookie($name, $token, time() + $alive, $path, $host, false, true);
     }
 }
