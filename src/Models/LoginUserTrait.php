@@ -6,23 +6,43 @@
  */
 namespace Evas\Auth\Models;
 
+use Evas\Auth\Interfaces\LoginUserInterface;
+
 trait LoginUserTrait
 {
     /**
      * Добавление пользователя по внешней авторизации.
      * @param string источник
      * @param array данные пользователя
+     * @return static
      */
-    public static function insertByForeign(string $source, array $data)
+    public static function insertByForeign(string $source, array $data): LoginUserInterface
     {
-        return static::insert($data);
+        $user = new static;
+        $user->setForeignData($source, $data);
+        $user->save();
+        return $user;
+    }
+
+    /**
+     * Установка данных пользователя, полученных из внешней авторизации.
+     * @param string источник
+     * @param array данные пользователя
+     * @return self
+     */
+    public function setForeignData(string $source, array $data): LoginUserInterface
+    {
+        $this->fill($data);
+        $this->save();
+        return $this;
     }
 
     /**
      * Добавление пользователя по паролю.
      * @param array данные пользователя
+     * @return static
      */
-    public static function insertByPassword(array $data)
+    public static function insertByPassword(array $data): LoginUserInterface
     {
         return static::insert($data);
     }
@@ -67,7 +87,7 @@ trait LoginUserTrait
      * @param array данные
      * @return static|null
      */
-    public static function findByUniqueKeys(array $data)
+    public static function findByUniqueKeys(array $data): ?LoginUserInterface
     {
         $where = $props = [];
         foreach (static::uniqueKeys() as &$key) {
