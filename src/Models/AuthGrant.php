@@ -96,7 +96,7 @@ class AuthGrant extends Model
      * @return static
      * @throws AuthException
      */
-    public static function createWithPassword(int $user_id, string $password)
+    public static function makeWithPassword(int $user_id, string $password)
     {
         static::throwIfSourceNotSupported('password');
         $grant = static::findWithPasswordByUserId($user_id);
@@ -108,6 +108,27 @@ class AuthGrant extends Model
             'source' => 'password',
         ]);
         $grant->setPasswordHash($password);
+        $grant->save();
+        return $grant;
+    }
+
+    /**
+     * Создание гранта входа по коду.
+     * @param id пользователя
+     * @param string источник получения кода
+     * @return static
+     */
+    public static function makeWithCode(int $user_id, string $to)
+    {
+        static::throwIfSourceNotSupported('code');
+        $grant = static::findWithCodeByUserId($user_id, $to);
+        if (!$grant) {
+            $grant = static::insert([
+                'user_id' => $user_id,
+                'source' => 'code',
+                'source_key' => $to,
+            ]);
+        }
         return $grant;
     }
 
@@ -115,13 +136,18 @@ class AuthGrant extends Model
      * Создание внешнего гранта.
      * @param id пользователя
      * @param string источник
-     * @param string ключ источника (id/email/etc.)
+     * @param string ключ источника (id/email/something)
      * @return static
      */
-    public static function createForeign(int $user_id, string $source, string $source_key)
+    public static function makeForeign(int $user_id, string $source, string $source_key)
     {
         static::throwIfSourceNotSupported($source);
-        return new static(compact('user_id', 'source', 'source_key'));
+        // if ($grant = static::findForeign($source, $source_key)) {
+        //     if ($grant->user_id != $user_id) {
+        //         throw AuthException::build('foreign_grant_already_exists');
+        //     }
+        // }
+        return static::insert(compact('user_id', 'source', 'source_key'));
     }
 
     /**
@@ -164,6 +190,20 @@ class AuthGrant extends Model
         return static::find()->where(
             '`source` = ? AND `user_id` = ? ',
             ['password', $user_id]
+        )->one()->classObject(static::class);
+    }
+
+    /**
+     * Поиск гранта кода по id пользователя.
+     * @param int id пользователя
+     * @param string источник получения кода
+     * @return static|null
+     */
+    public static function findWithCodeByUserId(int $user_id, string $to): ?AuthGrant
+    {
+        return static::find()->where(
+            '`source` = ? AND `user_id` = ? AND `source_key` = ?',
+            ['code', $user_id, $to]
         )->one()->classObject(static::class);
     }
 }
