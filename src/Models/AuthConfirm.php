@@ -52,49 +52,23 @@ class AuthConfirm extends Model
      */
     public function complete()
     {
-        if ($this->isOutdated()) {
-            throw new AuthException('Код подтверждения устарел');
-        }
+        if ($this->isOutdated()) throw AuthException::build('code_is_outdated');
         $this->complete_time = date('Y-m-d H:i:s');
         $this->save();
     }
 
     /**
-     * Создание подтверждения через email.
+     * Создание подтверждения.
      * @param int id пользователя
-     * @param string email
+     * @param string источник получения
      * @return static
-     */    
-    public static function createToEmail(int $user_id, string $to)
-    {
-        $code = static::generateCode();
-        $data = compact('user_id', 'to', 'code');
-        $data['type'] = self::TYPE_EMAIL;
-        return new static($data);
-    }
-
-    /**
-     * Создание подтверждения через телефон.
-     * @param int id пользователя
-     * @param string номер телефона
-     * @return static
-     */   
-    public static function createToPhone(int $user_id, string $to)
-    {
-        $code = static::generateCode();
-        $data = compact('user_id', 'to', 'code');
-        $data['type'] = self::TYPE_PHONE;
-        return new static($data);
-    }
-
-    /**
-     * Подтверждение email.
-     * @param string email
-     * @param string код подтверждения
      */
-    public static function completeEmail(string $email, string $code)
+    public static function make(int $user_id, string $to)
     {
-        // 
+        $code = static::generateCode();
+        $type = self::TYPE_EMAIL;
+        $data = compact('user_id', 'to', 'code', 'type');
+        return static::insert($data);
     }
 
     /**
@@ -107,35 +81,14 @@ class AuthConfirm extends Model
     }
 
     /**
-     * Поиск по коду отправленному на email.
+     * Поиск по id пользователя и коду.
+     * @param int id пользователя
      * @param string код
      * @return static|null
      */
-    public static function findByEmailCode(string $code): ?AuthRecovery
+    public static function findByUserIdAndCode(int $user_id, string $code): ?AuthConfirm
     {
-        return static::findByTypeCode(self::TYPE_EMAIL, $code);
-    }
-
-    /**
-     * Поиск по коду отправленному на телефон.
-     * @param string код
-     * @return static|null
-     */
-    public static function findByPhoneCode(string $code): ?AuthRecovery
-    {
-        return static::findByTypeCode(self::TYPE_PHONE, $code);
-    }
-
-    /**
-     * Поиск по коду и типу отправки.
-     * @param string тип отправки кода
-     * @param string код
-     * @return static|null
-     */
-    public static function findByTypeCode(int $type, string $code): ?AuthRecovery
-    {
-        return static::find()->where(
-            '`type` = ? AND `code` = ?', [$type, $code]
-        )->one()->classObject(static::class);
+        return static::find()->where('user_id = ? AND code = ?', [$user_id, $code])
+        ->one()->classObject(static::class);
     }
 }
