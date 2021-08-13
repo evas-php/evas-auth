@@ -43,8 +43,7 @@ class ForeignAuth
             $data = $oauth->getData();
             $user = Auth::userModel()::insertByForeign($source, $data);
             // - если нет, то 2. добавляем грант авторизации для $user->id + $source + $sourceKey
-            $grant = AuthGrant::createForeign($user->id, $source, $sourceKey);
-            $grant->save();
+            $grant = AuthGrant::makeForeign($user->id, $source, $sourceKey);
         }
         // 3. Создаём или обновляем AuthSession пользователя
         $session = Auth::makeSession($grant, $oauth->getAccessToken());
