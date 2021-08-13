@@ -414,26 +414,6 @@ class Auth extends Facade
     }
 
     /**
-     * Создание подтвержения email.
-     * @param int id пользователя
-     * @param string источник получения подтверждения
-     */
-    protected function createConfirmToEmail(int $user_id, string $to)
-    {
-        return AuthConfirm::createToEmail($user_id, $to);
-    }
-
-    /**
-     * Создание подтвержения телефона.
-     * @param int id пользователя
-     * @param string источник получения подтверждения
-     */
-    protected function createConfirmToPhone(int $user_id, string $to)
-    {
-        return AuthConfirm::createToPhone($user_id, $to);
-    }
-
-    /**
      * Получение id авторизованного пользователя.
      * @return int|null id пользователя
      */
