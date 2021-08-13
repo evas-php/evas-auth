@@ -38,7 +38,7 @@ class PasswordAuth
         // 3. Создаём пользователя по паролю, передаём данные
         $user = $userModel::insertByPassword($data);
         // 4. Создаём AuthGrant с паролем
-        AuthGrant::createWithPassword($user->id, $data['password']);
+        AuthGrant::makeWithPassword($user->id, $data['password']);
         // 5. Возвращаем пользователя
         return $user;
     }
@@ -102,6 +102,6 @@ class PasswordAuth
      */
     public static function setPassword(int $user_id, string $password)
     {
-        AuthGrant::createWithPassword($user_id, $password);
+        AuthGrant::makeWithPassword($user_id, $password);
     }
 }
