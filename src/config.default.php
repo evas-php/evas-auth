@@ -79,9 +79,12 @@ return [
         // 'vk' => [],
     ],
     // 'user_models' => [],
+    'token_length' => 30,
     'token_cookie_name' => 'token',
     'token_alive' => 2592000,
     'token_generate_max_tries' => 20,
+    'code_length' => 4,
+    'code_alive' => 3600,
     'db' => function (string $dbname = null) {
         return App::db($dbname);
     },
