@@ -8,32 +8,44 @@ namespace Evas\Auth\Actions;
 
 use Evas\Auth\Auth;
 use Evas\Auth\AuthException;
+use Evas\Auth\Interfaces\LoginUserInterface;
+use Evas\Auth\Models\AuthConfirm;
+use Evas\Auth\Models\AuthGrant;
+use Evas\Auth\Validators\CodeFieldset;
+use Evas\Auth\Validators\CodeInitFieldset;
 
 class CodeAuth
 {
     /**
      * Начало авторизации по отправленному на телефон/email коду.
-     * @param string тип авторизации
      * @param array|null данные запроса
      * @return string код подтверждения
      */
-    public static function getCode(string $type, array $payload = null): string
+    public static function getCode(array $payload = null): string
     {
         // 0. Проверяем поддержку входа по коду
         Auth::throwIfNotSupportedSource('code');
-        $userModel = Auth::userModel();
         // 1. Валидируем payload с email/телефоном (?)
-        $data = $userModel::validateEmailOrPhone($payload);
+        
+        $fieldset = new CodeInitFieldset;
+        $fieldset->throwIfNotValid($payload ?? []);
+        $data = $fieldset->values;
+        $type = $data['type'];
+        $to = $data[$type];
+
+        // return json_encode(json_encode($data));
+        // return json_encode([$to, $type]);
+
         // 2. Ищем пользователя с таким email/телефоном
-        $keys = array_fill_keys($userModel::uniqueKeys(), $data['login']);
-        $user = $userModel::findByUniqueKeys($keys);
+        $userModel = Auth::userModel();
+        $user = $userModel::findByUniqueKeysFilled($to, $type);
         if (!$user) {
             // - если пользователь не найден, создаём пользователя
-            $user = $userModel::insertByCode($data);
+            $user = $userModel::insert($data);
         }
-        // $grant = AuthGrant::createWithCode($user->id);
+        // $grant = AuthGrant::makeWithCode($user->id, $to);
         // 3. Создаём AuthConfirm со сгенерированным кодом для пользователя
-        $confirm = AuthConfirm::create(['user_id' => $user->id, 'to' => $to]);
+        $confirm = AuthConfirm::make($user->id, $to, $type);
         // 4. Возвращаем код подтверждения
         return (string) $confirm->code;
     }
@@ -44,34 +56,38 @@ class CodeAuth
      * @param array|null данные запроса
      * @return LoginUserInterface|null
      */
-    protected function login(array $payload = null): ?LoginUserInterface
+    public static function login(array $payload = null): ?LoginUserInterface
     {
         // 0. Проверяем поддержку входа по коду
         Auth::throwIfNotSupportedSource('code');
-        $userModel = Auth::userModel();
         // 1. Валидируем payload с кодом + email/телефон
-        $data = $userModel::validateCode($payload);
+
+        $fieldset = new CodeFieldset;
+        $fieldset->throwIfNotValid($payload ?? []);
+        $data = $fieldset->values;
+        $type = $data['type'];
+        $to = $data[$type];
+        $code = $data['code'];
+
         // 2. Ищем пользователя с таким email/телефоном
-        $keys = array_fill_keys($userModel::uniqueKeys(), $data['login']);
-        $user = $userModel::findByUniqueKeys($keys);
+        $user = Auth::userModel()::findByUniqueKeysFilled($to, $type);
         if (!$user) {
             // - ошибка, если пользователь не найден
             throw AuthException::build('user_not_found');
         }
         // 3. Ищем AuthConfirm с таким кодом для этого пользователя
-        $confirm = AuthConfirm::findByUserIdAndCode($user->id, $data['code']);
+        $confirm = AuthConfirm::findByUserIdAndCode($user->id, $code);
         if (!$confirm) {
             // - ошибка, если AuthConfirm не найден
             throw AuthException::build('code_is_not_active');
         }
         // 4. Подтверждаем AuthConfirm
         $confirm->complete();
-        // if (!AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
-            // return null;
-        // }
-        // 5. Создаём или обновляем AuthSession пользователя
+        // 5. Создаем AuthGrant по источнику получения
+        $grant = AuthGrant::makeWithCode($user->id, $to);
+        // 6. Создаём или обновляем AuthSession пользователя
         $session = Auth::makeSession($grant);
-        // 6. Возвращаем пользователя
+        // 7. Возвращаем пользователя
         return $user;
     }
 }
