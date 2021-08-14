@@ -55,7 +55,12 @@ class AuthSession extends Model
         $auth_grant_id = $grant->id;
         $user_ip = $request->getUserIp();
         $user_agent = $request->getHeader('User-Agent');
-        $token = Token::generateUniqueIn(static::tableName());
+        // $token = Token::generateUniqueIn(static::tableName());
+        $token = (new Token([
+            'symbols' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            'token_length' => Auth::config()['token_length'],
+            'token_generate_max_tries' => Auth::config()['token_generate_max_tries'],
+        ]))->generateUniqueIn(static::tableName());
 
         $session = static::find()->where(
             'user_id = ? AND auth_grant_id = ? AND user_ip = ? AND user_agent = ?', 
