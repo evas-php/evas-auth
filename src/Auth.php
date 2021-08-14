@@ -8,6 +8,7 @@ namespace Evas\Auth;
 
 use Evas\Auth\AuthException;
 use Evas\Auth\Actions\CodeAuth;
+use Evas\Auth\Actions\ConfirmAndRecovery;
 use Evas\Auth\Actions\ForeignAuth;
 use Evas\Auth\Actions\PasswordAuth;
 use Evas\Auth\Interfaces\LoginUserInterface;
@@ -378,7 +379,7 @@ class Auth extends Facade
      * @param array данные запроса
      * @return string код подтверждения
      */
-    protected function codeAuthInit(array $payload): string
+    protected function codeAuthInit(array $payload = null): string
     {
         return CodeAuth::getCode($payload);
         // $this->throwIfNotSupportedSource('code');
@@ -411,6 +412,11 @@ class Auth extends Facade
         //     return $user;
         // }
         // return null;
+    }
+
+    protected function confirmInit(array $payload = null)
+    {
+        return ConfirmAndRecovery::confirmInit($payload);
     }
 
     /**
