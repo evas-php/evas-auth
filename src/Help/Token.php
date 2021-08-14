@@ -8,28 +8,25 @@ namespace Evas\Auth\Help;
 
 use Evas\Auth\Auth;
 use Evas\Auth\AuthException;
-use Evas\Base\App;
 
 class Token
 {
-    /** @static string символы токена */
-    const TOKEN_SYMBOLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    /** @static int длина токена по умолчанию */
-    const DEFAULT_TOKEN_LENGTH = 30;
-
-    /** @static int максимальное количество попыток проверки уникального токена по умолчанию */
-    const DEFAULT_CHECK_UNIQUE_MAX_TRY_COUNT = 20;
+    /** @var string символы доступные в токене */
+    public $symbols = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    /** @var int длина генерируемого токена */
+    public $token_length = 30;
+    /** @var int максимальное количество проверки сгенерированного токена на уникальность */
+    public $token_generate_max_tries = 20;
 
     /**
-     * Получение максимального количества проверок токена на уникальность.
-     * @return int
+     * Конструктор.
+     * @param array|null параметры
      */
-    public static function getMaxTryCount(): int
+    public function __construct(array $props = null)
     {
-        $maxTryCount = Auth::config()['token_generate_max_tries'] ?? null;
-        if (empty($maxTryCount)) $maxTryCount = static::DEFAULT_CHECK_UNIQUE_MAX_TRY_COUNT;
-        return $maxTryCount;
+        if ($props) foreach ($props as $name => $value) {
+            $this->$name = $value;
+        }
     }
 
     /**
@@ -37,15 +34,13 @@ class Token
      * @param int|null длина токена
      * @return string токен
      */
-    public static function generate(int $length = null): string
+    public function generate(int $length = null): string
     {
-        static $symLen = null;
-        if (null === $symLen) $symLen = mb_strlen(static::TOKEN_SYMBOLS);
-        if (!$length) $length = static::DEFAULT_TOKEN_LENGTH;
-
+        $symLen = mb_strlen($this->symbols);
+        if (!$length) $length = $this->token_length;
         $token = '';
         for ($i = 0; $i < $length; $i++) {
-            $token .= static::TOKEN_SYMBOLS[mt_rand(1, $symLen) - 1];
+            $token .= $this->symbols[mt_rand(1, $symLen) - 1];
         }
         return $token;
     }
@@ -58,12 +53,8 @@ class Token
      * @throws \InvalidArgumentException
      * @throws AuthException
      */
-    public static function generateUniqueIn(string $tbl, int $length = null): string
+    public function generateUniqueIn($tbl, int $length = null): string
     {
-        static $maxTryCount = null;
-        if (null === $maxTryCount) {
-            $maxTryCount = static::getMaxTryCount();
-        }
         if (is_array($tbl) && 2 == count($tbl)) {
             list($tbl, $field) = $tbl;
         } else if (is_string($tbl)) {
@@ -75,13 +66,13 @@ class Token
             ));
             
         }
-        for ($try = 0; $try < $maxTryCount; $try++) {
-            $token = static::generate($length);
-            if (!App::db()->select($tbl)->where("$field = ?", [$token])->one()->rowCount()) {
+        for ($try = 0; $try < $this->token_generate_max_tries; $try++) {
+            $token = $this->generate($length);
+            if (!Auth::getDb()->select($tbl)->where("$field = ?", [$token])->one()->rowCount()) {
                 break;
             }
         }
-        if ($try >= $maxTryCount) {
+        if ($try >= $this->token_generate_max_tries) {
             throw AuthException::build('token_exceeed_max_try_generated');
         }
         return $token;
