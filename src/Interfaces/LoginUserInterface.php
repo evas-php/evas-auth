@@ -64,4 +64,12 @@ interface LoginUserInterface
      * @return static|null
      */
     public static function findByUniqueKeys(array $data): ?LoginUserInterface;
+
+    /**
+     * Поиск записи по уникальным ключам с одинаковым значением для входа.
+     * @param mixed значение оиска
+     * @param string|null имя ключа поиска
+     * @return static|null
+     */
+    public static function findByUniqueKeysFilled($value, string $name = null): ?LoginUserInterface;
 }
