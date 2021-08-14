@@ -101,4 +101,20 @@ trait LoginUserTrait
         return static::find()->where($where, $props)->one()
         ->classObject(static::class);
     }
+
+    /**
+     * Поиск записи по уникальным ключам с одинаковым значением для входа.
+     * @param mixed значение оиска
+     * @param string|null имя ключа поиска
+     * @return static|null
+     */
+    public static function findByUniqueKeysFilled($value, string $name = null): ?LoginUserInterface
+    {
+        if ($name && in_array($name, static::uniqueKeys())) {
+            $data = [$name => $value];
+        } else {
+            $data = array_fill_keys(static::uniqueKeys(), $value);
+        }
+        return static::findByUniqueKeys($data);
+    }
 }
