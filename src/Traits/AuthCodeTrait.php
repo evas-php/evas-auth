@@ -73,37 +73,6 @@ trait AuthCodeTrait
     }
 
     /**
-     * ???????????????????????????????
-     * ???????????????????????????????
-     * Получение кода для переотправки.
-     * @param array|null данные запроса
-     * @return string код подтверждения
-     */
-    protected function getCodeForResend(array $payload = null): string
-    {
-        // 0. Проверяем поддержку входа по коду
-        $this->throwIfNotSupportedSource('code');
-        // 1. Валидируем payload с email/телефоном (?)
-        list($data, $to, $type) = static::validateGetCodeFieldset($payload);
-
-        // 2. Ищем пользователя с таким email/телефоном
-        $userModel = $this->userModel();
-        $user = $userModel::findByUniqueKeysFilled($to, $type);
-        if (!$user) {
-            // - если пользователь не найден, создаём пользователя
-            $user = $userModel::insert($data);
-        }
-        // 3. Ищем AuthConfirm
-        $confirm = AuthConfirm::findByUserIdAndTo($user->id, $to);
-        if (!$confirm) {
-            // - создаем AuthConfirm, если не найден
-            $confirm = AuthConfirm::make($user->id, $to, $type);
-        }
-        // 4. Возвращаем код подтверждения
-        return (string) $confirm->code;
-    }
-
-    /**
      * Авторизаци по отправленному на телефон/email коду.
      * @param string тип
      * @param array|null данные запроса
