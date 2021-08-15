@@ -108,4 +108,52 @@ trait AuthConfirmTrait
         // 3. Возвращаем AuthGrant пароля
         return $grant;
     }
+
+
+    // Получение для переотправки.
+
+    /**
+     * Получение кода подтверждения для переотправки.
+     * @param array|null данные запроса
+     * @param bool нужно ли искать как подтверждение восстановления
+     * @return string код подтверждения
+     */
+    protected function getCodeForResend(array $payload = null, bool $recovery = false): string
+    {
+        // 0. Проверяем поддержку входа по коду
+        $this->throwIfNotSupportedSource('code');
+        // 1. Валидируем payload с email/телефоном (?)
+        list($data, $to, $type) = static::validateGetCodeFieldset($payload);
+
+        // 2. Ищем пользователя с таким email/телефоном
+        $userModel = $this->userModel();
+        $user = $userModel::findByUniqueKeysFilled($to, $type);
+        if (!$user) {
+            // - если пользователь не найден, создаём пользователя
+            $user = $userModel::insert($data);
+        }
+        // 3. Ищем AuthConfirm
+        $confirmClass = $recovery ? AuthRecovery::class : AuthConfirm::class;
+        $confirm = $confirmClass::findByUserIdAndTo($user->id, $to);
+        if (!$confirm) {
+            // - создаем AuthConfirm, если не найден
+            $confirm = $confirmClass::make($user->id, $to, $type);
+        }
+        if ($confirm->isCompleted()) {
+            // - ошибка, если уже подтверждено
+            throw AuthException::build('code_is_not_active');
+        }
+        // 4. Возвращаем код подтверждения
+        return (string) $confirm->code;
+    }
+
+    /**
+     * Получение кода подтверждения восстановления для переотправки.
+     * @param array|null данные запроса
+     * @return string код подтверждения
+     */
+    protected function getRecoveryCodeForResend(array $payload = null): string
+    {
+        return $this->getCodeForResend($payload, true);
+    }
 }
