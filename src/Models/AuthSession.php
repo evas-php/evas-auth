@@ -38,13 +38,13 @@ class AuthSession extends Model
     public $end_time;
 
     /**
-     * Вход.
+     * Создание или обновление сессии авторизации.
      * @param AuthGrant грант аутентификации
      * @param string|null токен гранта аутентификации
      * @param RequestInterface запрос
      * @return static
      */
-    public static function createOrUpdate(
+    public static function make(
         AuthGrant &$grant, 
         string $grant_token = null,
         RequestInterface &$request = null
