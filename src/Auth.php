@@ -7,14 +7,18 @@
 namespace Evas\Auth;
 
 use Evas\Auth\AuthException;
-use Evas\Auth\Actions\CodeAuth;
-use Evas\Auth\Actions\ConfirmAndRecovery;
-use Evas\Auth\Actions\ForeignAuth;
-use Evas\Auth\Actions\PasswordAuth;
+// use Evas\Auth\Actions\CodeAuth;
+// use Evas\Auth\Actions\ConfirmAndRecovery;
+// use Evas\Auth\Actions\ForeignAuth;
+// use Evas\Auth\Actions\PasswordAuth;
 use Evas\Auth\Interfaces\LoginUserInterface;
 use Evas\Auth\Interfaces\OauthInterface;
 use Evas\Auth\Models\AuthGrant;
 use Evas\Auth\Models\AuthSession;
+use Evas\Auth\Traits\AuthCodeTrait;
+use Evas\Auth\Traits\AuthConfirmTrait;
+use Evas\Auth\Traits\AuthForeignTrait;
+use Evas\Auth\Traits\AuthPasswordTrait;
 use Evas\Base\App;
 use Evas\Base\Help\Facade;
 use Evas\Db\Interfaces\DatabaseInterface;
@@ -22,6 +26,8 @@ use Evas\Http\Interfaces\RequestInterface;
 
 class Auth extends Facade
 {
+    use AuthCodeTrait, AuthConfirmTrait, AuthForeignTrait, AuthPasswordTrait;
+
     /** @var array конфиг */
     protected $config = [];
     protected $db;
@@ -253,170 +259,9 @@ class Auth extends Facade
      */
     protected function makeSession(AuthGrant &$grant, string $grant_token = null): AuthSession
     {
-        $session = AuthSession::createOrUpdate($grant, $grant_token);
+        $session = AuthSession::make($grant, $grant_token);
         $this->setCookieToken($session->token);
         return $session;
-    }
-
-    /**
-     * Получение ссылки внешней авторизации.
-     * @param string источник
-     * @return string
-     * @throws AuthException
-     */
-    protected function foreignAuthLink(string $source): string
-    {
-        return ForeignAuth::getLink($source);
-        // return $this->getOauth($source)->getAuthLink();
-    }
-
-    /**
-     * Авторизация через внешний источник.
-     * @param string источник
-     * @param array параметры запроса\
-     * @return int id пользователя
-     * @throws AuthException
-     */
-    protected function foreignAuth(string $source, array $payload): int
-    {
-        return ForeignAuth::login($source, $payload);
-        // $oauth = $this->getOauth($source);
-        // $oauth->resolveLogin($payload);
-        // $sourceKey = $oauth->getSourceKey();
-
-        // $grant = AuthGrant::findForeign($source, $sourceKey);
-        // if (!$grant) {
-        //     $data = $oauth->getData();
-        //     $user = $this->userModel()::insertByForeign($source, $data);
-
-        //     $grant = AuthGrant::createForeign($user->id, $source, $sourceKey);
-        //     $grant->save();
-        // }
-        // $session = AuthSession::createOrUpdate($grant, $oauth->getAccessToken());
-        // AuthSession::setCookieToken($session->token);
-        // return $grant->user_id;
-    }
-
-    /**
-     * Авторизаци по паролю.
-     * @param array параметры запроса
-     * @return LoginUserInterface
-     * @throws AuthException
-     */
-    protected function passwordAuth(array $payload = null): LoginUserInterface
-    {
-        return PasswordAuth::login($payload);
-        // $this->throwIfNotSupportedSource('password');
-        
-        // $data = $this->userModel()::validateLogin($payload);
-        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        // $user = $this->userModel()::findByUniqueKeys($keys);
-
-        // if (!$user) {
-        //     throw AuthException::build('user_not_found');
-        // }
-        // $grant = AuthGrant::findWithPasswordByUserId($user->id);
-        // if (!$grant->checkPassword($data['password'])) {
-        //     throw AuthException::build('user_fail_password');
-        // }
-        // $session = AuthSession::createOrUpdate($grant);
-        // AuthSession::setCookieToken($session->token);
-        // return $user;
-    }
-
-    /**
-     * Регистрация по паролю.
-     * @param array параметры запроса
-     * @return LoginUserInterface
-     * @throws AuthException
-     */
-    protected function passwordRegistration(array $payload = null): LoginUserInterface
-    {
-        return PasswordAuth::registration($payload);
-        // $this->throwIfNotSupportedSource('password');
-        // $data = $this->userModel()::validateRegistration($payload);
-        // $user = $this->userModel()::findByUniqueKeys($data);
-        // if ($user) foreach ($this->userModel()::uniqueKeys() as &$key) {
-        //     if (isset($data[$key]) && $user->$key === $data[$key]) {
-        //         $label = $this->userModel()::getUniqueKeyLabel($key);
-        //         throw AuthException::build('user_already_exists', $label);
-        //     }
-        // }
-        // $user = $this->userModel()::insertByPassword($data);
-        // AuthGrant::createWithPassword($user->id, $data['password']);
-        // return $user;
-    }
-
-    /**
-     * Смена пароля пользователя.
-     * @param int id пользователя
-     * @param string старый пароль
-     * @param string новый пароль
-     * @throws AuthException
-     */
-    protected function changePassword(int $user_id, string $password_old, string $password)
-    {
-        return PasswordAuth::changePassword($user_id, $password_old, $password);
-        // $grant = AuthGrant::findWithPasswordByUserId($user_id);
-        // if (!$grant) throw AuthException::build('password_grant_not_found');
-        // $grant->changePassword($password_old, $password);
-    }
-
-    /**
-     * Установка пароля пользователя.
-     * @param int id пользователя
-     * @param string пароль
-     * @throws AuthException
-     */
-    protected function setPassword(int $user_id, string $password)
-    {
-        return PasswordAuth::setPassword($user_id, $password);
-        // AuthGrant::createWithPassword($user_id, $password);
-    }
-
-    /**
-     * Начало авторизации по отправленному на телефон/email коду.
-     * @param array данные запроса
-     * @return string код подтверждения
-     */
-    protected function codeAuthInit(array $payload = null): string
-    {
-        return CodeAuth::getCode($payload);
-        // $this->throwIfNotSupportedSource('code');
-        // // $data = $this->userModel()::validateCode($payload);
-        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        // $user = $this->userModel()::findByUniqueKeys($keys);
-        // if (!$user) {
-        //     $user = $this->userModel()::insertByCode($data);
-        // }
-        // // $confirm = AuthConfirm::createToEmail()
-        // return $confirm->code;
-    }
-
-    /**
-     * Авторизаци по отправленному на телефон/email коду.
-     * @param array данные запроса
-     * @return LoginUserInterface|null
-     */
-    protected function codeAuth(array $payload): ?LoginUserInterface
-    {
-        return CodeAuth::login($payload);
-        // $this->throwIfNotSupportedSource('code');
-        // $data = $this->userModel()::validateCode($payload);
-        // $keys = array_fill_keys($this->userModel()::uniqueKeys(), $data['login']);
-        // $user = $this->userModel()::findByUniqueKeys($keys);
-        // if (!$user) {
-        //     throw AuthException::build('user_not_found');
-        // }
-        // if (AuthConfirm::completeConfirm($data['type'], $user->id, $data['code'])) {
-        //     return $user;
-        // }
-        // return null;
-    }
-
-    protected function confirmInit(array $payload = null)
-    {
-        return ConfirmAndRecovery::confirmInit($payload);
     }
 
     /**
