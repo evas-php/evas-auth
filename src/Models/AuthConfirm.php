@@ -51,6 +51,15 @@ class AuthConfirm extends Model
     }
 
     /**
+     * Проверка завершённости подтверждения.
+     * @return bool
+     */
+    public function isCompleted(): bool
+    {
+        return !empty($this->complete_time);
+    }
+
+    /**
      * Установка завершения подтверждения.
      * @throws AuthException
      */
@@ -83,7 +92,9 @@ class AuthConfirm extends Model
     public static function make(int $user_id, string $to, string $type = null): AuthConfirm
     {
         $confirm = static::findByUserIdAndTo($user_id, $to);
-        if (!$confirm) {
+        if ($confirm) {
+            $confirm->complete_time = null;
+        } else {
             if ($type) $type = array_search($type, self::TYPES) ?? null;
             else $type = static::getRecipientType($to);
             $confirm = static::create(compact('user_id', 'to', 'type'));
@@ -116,7 +127,7 @@ class AuthConfirm extends Model
      */
     public static function findByUserIdAndCode(int $user_id, string $code): ?AuthConfirm
     {
-        return static::find()->where('user_id = ? AND code = ?', [$user_id, $code])
+        return static::find()->where('user_id = ? AND code = ? AND complete_time IS NULL', [$user_id, $code])
         ->one()->classObject(static::class);
     }
 
