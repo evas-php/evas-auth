@@ -6,6 +6,7 @@
  */
 namespace Evas\Auth\Validators;
 
+use Evas\Auth\Auth;
 use Evas\Validate\Field;
 use Evas\Validate\Fieldset;
 
