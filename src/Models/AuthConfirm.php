@@ -10,6 +10,8 @@ use Evas\Auth\Auth;
 use Evas\Auth\AuthException;
 use Evas\Auth\Help\Model;
 use Evas\Auth\Help\Token;
+use Evas\Validate\Fields\EmailField;
+use Evas\Validate\Fields\PhoneField;
 
 class AuthConfirm extends Model
 {
@@ -25,9 +27,9 @@ class AuthConfirm extends Model
     public $id;
     /** @var int id пользователя */
     public $user_id;
-    /** @var int тип источника получения */
+    /** @var int тип адреса получения */
     public $type;
-    /** @var string источник получения кода подтверждения */
+    /** @var string адрес получения кода подтверждения */
     public $to;
     /** @var string код подтверждения */
     public $code;
@@ -61,34 +63,34 @@ class AuthConfirm extends Model
 
 
     /**
-     * Определение типа источника получения кода.
-     * @param string источник получения
-     * @return int|null тип источника
+     * Определение типа адреса получения кода.
+     * @param string адрес получения
+     * @return int|null тип адреса
      */
     public static function getRecipientType(string $to): ?int
     {
-        return (new EmailField)->checkPattern($to) ? self::TYPE_EMAIL 
-        : (
-            (new PhoneField)->checkPattern($to) ? self::TYPE_PHONE
-            : null
-        );
+        return (new EmailField)->isValid($to) ? self::TYPE_EMAIL 
+        : ( (new PhoneField)->isValid($to) ? self::TYPE_PHONE : null );
     }
 
     /**
-     * Создание подтверждения.
+     * Создание или обновление подтверждения адреса входа.
      * @param int id пользователя
-     * @param string источник получения
-     * @param string|null тип источника получения
+     * @param string адрес получения
+     * @param string|null тип адреса получения
      * @return static
      */
-    public static function make(int $user_id, string $to, string $type = null)
+    public static function make(int $user_id, string $to, string $type = null): AuthConfirm
     {
-        $code = static::generateCode();
-        if ($type) $type = array_search($type, self::TYPES) ?? null;
-        else $type = static::getRecipientType($to);
-        $end_time = date('Y-m-d H:i:s', time() + (int) Auth::config()['code_alive']);
-        $data = compact('user_id', 'to', 'code', 'type', 'end_time');
-        return static::insert($data);
+        $confirm = static::findByUserIdAndTo($user_id, $to);
+        if (!$confirm) {
+            if ($type) $type = array_search($type, self::TYPES) ?? null;
+            else $type = static::getRecipientType($to);
+            $confirm = static::create(compact('user_id', 'to', 'type'));
+        }
+        $confirm->code = static::generateCode();
+        $confirm->end_time = date('Y-m-d H:i:s', time() + (int) Auth::config()['code_alive']);
+        return $confirm->save();
     }
 
     /**
@@ -115,6 +117,18 @@ class AuthConfirm extends Model
     public static function findByUserIdAndCode(int $user_id, string $code): ?AuthConfirm
     {
         return static::find()->where('user_id = ? AND code = ?', [$user_id, $code])
+        ->one()->classObject(static::class);
+    }
+
+    /**
+     * Поиск по id пользователя и адресу получения.
+     * @param int id пользователя
+     * @param string адрес получения
+     * @return static|null
+     */
+    public static function findByUserIdAndTo(int $user_id, string $to): ?AuthConfirm
+    {
+        return static::find()->where('user_id = ? AND `to` = ?', [$user_id, $to])
         ->one()->classObject(static::class);
     }
 }
