@@ -52,7 +52,7 @@ class AuthGrant extends Model
      * Установка хеша пароля.
      * @param string пароль
      */
-    protected function setPasswordHash(string $password)
+    public function setPasswordHash(string $password)
     {
         $this->throwIfNotPasswordGrant();
         $this->source_key = password_hash($password, PASSWORD_DEFAULT);
