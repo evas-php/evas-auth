@@ -1,6 +1,6 @@
 <?php
 /**
- * Трейт авторизации по коду.
+ * Трейт аутентификации по коду.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -48,7 +48,7 @@ trait AuthCodeTrait
     }
 
     /**
-     * Начало авторизации по отправленному на телефон/email коду.
+     * Начало аутентификации по отправленному на телефон/email коду.
      * @param array|null данные запроса
      * @return string код подтверждения
      */

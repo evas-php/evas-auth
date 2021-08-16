@@ -1,6 +1,6 @@
 <?php
 /**
- * Трейт авторизации через внешний ресурс.
+ * Трейт аутентификации через внешний ресурс.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -12,7 +12,7 @@ use Evas\Auth\Models\AuthGrant;
 trait AuthForeignTrait
 {
     /**
-     * Получение ссылки для внешней авторизации.
+     * Получение ссылки для внешней аутентификации.
      * @param string источник
      * @return string ссылка
      * @throws AuthException
@@ -23,7 +23,7 @@ trait AuthForeignTrait
     }
 
     /**
-     * Авторизация через внешний источник.
+     * Аутентификация через внешний источник.
      * @param string источник
      * @param array параметры запроса
      * @return int id пользователя
@@ -42,7 +42,7 @@ trait AuthForeignTrait
             // - если нет, то 1. добавляем пользователя $user с данными $data
             $data = $oauth->getData();
             $user = $this->userModel()::insertByForeign($source, $data);
-            // - если нет, то 2. добавляем грант авторизации для $user->id + $source + $sourceKey
+            // - если нет, то 2. добавляем грант аутентификации для $user->id + $source + $sourceKey
             $grant = AuthGrant::makeForeign($user->id, $source, $sourceKey);
         }
         // 3. Создаём или обновляем AuthSession пользователя

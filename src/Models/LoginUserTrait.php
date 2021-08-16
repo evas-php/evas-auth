@@ -1,6 +1,6 @@
 <?php
 /**
- * Трейт пользователя для авторизации.
+ * Трейт пользователя для аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -11,7 +11,7 @@ use Evas\Auth\Interfaces\LoginUserInterface;
 trait LoginUserTrait
 {
     /**
-     * Добавление пользователя по внешней авторизации.
+     * Добавление пользователя по внешней аутентификации.
      * @param string источник
      * @param array данные пользователя
      * @return static
@@ -25,7 +25,7 @@ trait LoginUserTrait
     }
 
     /**
-     * Установка данных пользователя, полученных из внешней авторизации.
+     * Установка данных пользователя, полученных из внешней аутентификации.
      * @param string источник
      * @param array данные пользователя
      * @return self
@@ -55,7 +55,7 @@ trait LoginUserTrait
     ];
 
     /**
-     * Получение уникальных ключей пользователя для авторизации по паролю.
+     * Получение уникальных ключей пользователя для аутентификации по паролю.
      * @return array
      */
     public static function uniqueKeys(): array

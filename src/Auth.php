@@ -1,6 +1,6 @@
 <?php
 /**
- * Адаптер авторизации.
+ * Адаптер аутентификации.
  * @package evas-php/evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -48,7 +48,7 @@ class Auth extends Facade
     }
 
     /**
-     * Установка конфига модуля авторизации.
+     * Установка конфига модуля аутентификации.
      * @param array|string конфиг или путь к конфигу
      * @return self
      * @throws \InvalidArgumentException
@@ -74,7 +74,7 @@ class Auth extends Facade
     }
 
     /**
-     * Установка внешней авторизации.
+     * Установка внешней аутентификации.
      * @param string источник
      * @param array|string конфиг
      * @return self
@@ -120,7 +120,7 @@ class Auth extends Facade
 
 
     /**
-     * Получение конфига модуля авторизации.
+     * Получение конфига модуля аутентификации.
      * @return array конфиг
      */
     protected function config(): array
@@ -174,7 +174,7 @@ class Auth extends Facade
     }
 
     /**
-     * Получение доступных способов авторизации.
+     * Получение доступных способов аутентификации.
      * @return array
      */
     protected function supportedSources(): array
@@ -186,8 +186,8 @@ class Auth extends Facade
     }
 
     /**
-     * Проверка доступности способа авторизации.
-     * @param string способ авторизации
+     * Проверка доступности способа аутентификации.
+     * @param string способ аутентификации
      * @return bool
      */
     protected function isSupportedSource(string $source): bool
@@ -196,8 +196,8 @@ class Auth extends Facade
     }
 
     /**
-     * Выбрасывание исключения при недоступности способа авторизации.
-     * @param string способ авторизации
+     * Выбрасывание исключения при недоступности способа аутентификации.
+     * @param string способ аутентификации
      * @throws AuthException
      */
     protected function throwIfNotSupportedSource(string $source)
@@ -210,7 +210,7 @@ class Auth extends Facade
 
 
     /**
-     * Получение помощника авторизации.
+     * Получение помощника аутентификации.
      * @param string источник
      * @return OauthInterface
      */
@@ -252,8 +252,8 @@ class Auth extends Facade
     }
 
     /**
-     * Создание или обновление сессии авторизации.
-     * @param AuthGrant грант авторизации
+     * Создание или обновление сессии аутентификации.
+     * @param AuthGrant грант аутентификации
      * @param string|null токен гранта аутентификации
      * @return AuthSession
      */

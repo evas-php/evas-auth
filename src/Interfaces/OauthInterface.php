@@ -1,6 +1,6 @@
 <?php
 /**
- * Интерфейс внешней авторизации.
+ * Интерфейс внешней аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -40,8 +40,8 @@ interface OauthInterface
     public function getSourceKey(): ?string;
 
     /**
-     * Получение oauth ссылки на авторизацию.
-     * @return string ссылка для перехода на авторизацию
+     * Получение oauth ссылки на аутентификацию.
+     * @return string ссылка для перехода на аутентификацию
      */
     public function getAuthLink(): string;
 

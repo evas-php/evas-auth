@@ -1,6 +1,6 @@
 <?php
 /**
- * Исключение авторизации.
+ * Исключение аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vayakin <egor@evas-php.com>
  */

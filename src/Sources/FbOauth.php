@@ -1,6 +1,6 @@
 <?php
 /**
- * Oauth api авторизации через facebook.com
+ * Oauth api аутентификации через facebook.com
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  * @link facebook oauth doc https://developers.facebook.com/docs/facebook-login
@@ -12,9 +12,9 @@ use Evas\Auth\Help\BaseOauth;
 
 class FbOauth extends BaseOauth
 {
-    /** @static string имя источника авторизации */
+    /** @static string имя источника аутентификации */
     const SOURCE = 'fb';
-    /** @static string полное имя источника авторизации */
+    /** @static string полное имя источника аутентификации */
     const SOURCE_NAME = 'facebook.com';
 
     /** @static string домен oauth */
@@ -52,8 +52,8 @@ class FbOauth extends BaseOauth
     }
 
     /**
-     * Получение oauth ссылки на авторизацию.
-     * @return string ссылка для перехода на авторизацию
+     * Получение oauth ссылки на аутентификацию.
+     * @return string ссылка для перехода на аутентификацию
      */
     public function getAuthLink(): string
     {

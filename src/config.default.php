@@ -1,6 +1,6 @@
 <?php
 /**
- * Дефолтный конфиг модуля авторизации.
+ * Дефолтный конфиг модуля аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */

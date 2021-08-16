@@ -1,6 +1,6 @@
 <?php
 /**
- * Oauth api авторизации через vk.com
+ * Oauth api аутентификации через vk.com
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  * @link vk oauth doc https://vk.com/dev/access_token
@@ -12,9 +12,9 @@ use Evas\Auth\Help\BaseOauth;
 
 class VkOauth extends BaseOauth
 {
-    /** @static string имя источника авторизации */
+    /** @static string имя источника аутентификации */
     const SOURCE = 'vk';
-    /** @static string полное имя источника авторизации */
+    /** @static string полное имя источника аутентификации */
     const SOURCE_NAME = 'vk.com';
 
     /** @static string домен oauth */
@@ -62,8 +62,8 @@ class VkOauth extends BaseOauth
     }
 
     /**
-     * Получение oauth ссылки на авторизацию.
-     * @return string ссылка для перехода на авторизацию
+     * Получение oauth ссылки на аутентификацию.
+     * @return string ссылка для перехода на аутентификацию
      */
     public function getAuthLink(): string
     {

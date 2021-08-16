@@ -1,6 +1,6 @@
 <?php
 /**
- * Трейт авторизации по паролю.
+ * Трейт аутентификации по паролю.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -44,7 +44,7 @@ trait AuthPasswordTrait
     }
 
     /**
-     * Авторизаци по паролю.
+     * Аутентификация по паролю.
      * @param array|null параметры запроса
      * @return LoginUserInterface
      * @throws AuthException

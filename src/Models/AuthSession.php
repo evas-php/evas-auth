@@ -38,7 +38,7 @@ class AuthSession extends Model
     public $end_time;
 
     /**
-     * Создание или обновление сессии авторизации.
+     * Создание или обновление сессии аутентификации.
      * @param AuthGrant грант аутентификации
      * @param string|null токен гранта аутентификации
      * @param RequestInterface запрос

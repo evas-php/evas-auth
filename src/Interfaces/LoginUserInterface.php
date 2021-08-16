@@ -1,6 +1,6 @@
 <?php
 /**
- * Интерфейс пользователя для авторизации.
+ * Интерфейс пользователя для аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -9,7 +9,7 @@ namespace Evas\Auth\Interfaces;
 interface LoginUserInterface
 {
     /**
-     * Добавление пользователя по внешней авторизации.
+     * Добавление пользователя по внешней аутентификации.
      * @param string источник
      * @param array данные пользователя
      * @return static
@@ -17,7 +17,7 @@ interface LoginUserInterface
     public static function insertByForeign(string $source, array $data): LoginUserInterface;
 
     /**
-     * Установка данных пользователя, полученных из внешней авторизации.
+     * Установка данных пользователя, полученных из внешней аутентификации.
      * @param string источник
      * @param array данные пользователя
      * @return self
@@ -46,7 +46,7 @@ interface LoginUserInterface
     public static function validateRegistration(array $payload = null): array;
 
     /**
-     * Получение уникальных ключей пользователя для авторизации по паролю.
+     * Получение уникальных ключей пользователя для аутентификации по паролю.
      * @return array
      */
     public static function uniqueKeys(): array;

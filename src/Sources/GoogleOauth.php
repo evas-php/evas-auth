@@ -1,6 +1,6 @@
 <?php
 /**
- * Oauth api авторизации через google.com
+ * Oauth api аутентификации через google.com
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  * @link google oauth doc https://developers.google.com/identity/protocols/oauth2/web-server
@@ -14,9 +14,9 @@ use Evas\Auth\Help\BaseOauth;
  */
 class GoogleOauth extends BaseOauth
 {
-    /** @static string имя источника авторизации */
+    /** @static string имя источника аутентификации */
     const SOURCE = 'google';
-    /** @static string полное имя источника авторизации */
+    /** @static string полное имя источника аутентификации */
     const SOURCE_NAME = 'google.com';
 
     /** @static string домен oauth */
@@ -48,8 +48,8 @@ class GoogleOauth extends BaseOauth
     }
 
     /**
-     * Получение oauth ссылки на авторизацию.
-     * @return string ссылка для перехода на авторизацию
+     * Получение oauth ссылки на аутентификацию.
+     * @return string ссылка для перехода на аутентификацию
      */
     public function getAuthLink(): string
     {

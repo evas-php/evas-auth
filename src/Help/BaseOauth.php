@@ -1,6 +1,6 @@
 <?php
 /**
- * Базовый абстрактный класс внешней авторизации.
+ * Базовый абстрактный класс внешней аутентификации.
  * @package evas-php\evas-auth
  * @author Egor Vasyakin <egor@evas-php.com>
  */
@@ -190,8 +190,8 @@ abstract class BaseOauth implements OauthInterface
     // Необходимые к реализации у наследников методы:
 
     /**
-     * Получение oauth ссылки на авторизацию.
-     * @return string ссылка для перехода на авторизацию
+     * Получение oauth ссылки на аутентификацию.
+     * @return string ссылка для перехода на аутентификацию
      */
     abstract public function getAuthLink(): string;
 
