@@ -7,7 +7,7 @@
 namespace Evas\Auth\Validators;
 
 use Evas\Auth\Auth;
-use Evas\Validate\Field;
+use Evas\Auth\Validators\PasswordField;
 use Evas\Validate\Fieldset;
 
 class PasswordResetFieldset extends Fieldset
@@ -19,8 +19,8 @@ class PasswordResetFieldset extends Fieldset
     public function presetFields(): ?array
     {
         $fieldClass = Auth::config()['new_password_field'];
-        $props = $fieldClass === Field::class ? [
-            'min' => 6, 'max' => 30, 'label' => Auth::config()['new_password_label'],
+        $props = $fieldClass === PasswordField::class ? [
+            'label' => Auth::config()['new_password_label'],
         ] : [];
         return [
             'password' => new $fieldClass(array_merge($props, [
