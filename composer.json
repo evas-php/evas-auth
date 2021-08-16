@@ -1,7 +1,7 @@
 {
     "name": "evas-php/evas-auth",
     "description": "Evas Autorization module",
-    "keywords": ["auth", "authorisation", "auth module", "authorisation module", "evas-php", "php"],
+    "keywords": ["auth", "authentication", "authorization", "auth module", "authentication module", "evas-php", "php"],
     "version": "1.0",
     "type": "library",
     "license": "CC-BY-4.0",
@@ -13,6 +13,9 @@
     ],
     "require": {
         "evas-php/evas-base": "*",
-        "evas-php/evas-curl": "*"
+        "evas-php/evas-db": "*",
+        "evas-php/evas-http": "*",
+        "evas-php/evas-orm": "*",
+        "evas-php/evas-validate": "*"
     }
 }
