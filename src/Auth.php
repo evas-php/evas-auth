@@ -31,8 +31,10 @@ class Auth extends Facade
     /** @var array конфиг */
     protected $config = [];
     protected $db;
-    protected $userModel;
     protected $user_id = false;
+    protected $userModel;
+    protected $supportedForeign;
+    protected $supported;
 
     /** @static string путь к конфигу по умолчанию */
     const DEFAULT_CONFIG_PATH = __DIR__.'/config.default.php';
@@ -70,6 +72,9 @@ class Auth extends Facade
             ));
         }
         $this->config = array_merge_recursive($this->config(), $config);
+        $this->supportedForeign = null;
+        $this->supported = null;
+        $this->userModel = null;
         return $this;
     }
 
@@ -96,7 +101,7 @@ class Auth extends Facade
                 __METHOD__, gettype($config)
             ));
         }
-        $this->config()['foreigns'][$source] = $config;
+        $this->config['foreigns'][$source] = $config;
         return $this;
     }
 
@@ -115,6 +120,7 @@ class Auth extends Facade
             ));
         }
         $this->config['userModel'] = $className;
+        $this->userModel = null;
         return $this;
     }
 
@@ -160,17 +166,31 @@ class Auth extends Facade
      */
     protected function userModel(): string
     {
-        $userModel = $this->config['userModel'] ?? null;
-        if (!$userModel) {
-            throw new AuthException('User model not exists');
+        if (!$this->userModel) {
+            $this->userModel = $this->config['userModel'] ?? null;
+            if (!$this->userModel) {
+                throw new AuthException('User model not exists');
+            }
+            if (!is_subclass_of($this->userModel, LoginUserInterface::class)) {
+                throw new AuthException(sprintf(
+                    'User model "%s" must implement the %s',
+                    $this->userModel, LoginUserInterface::class
+                ));
+            }
         }
-        if (!is_subclass_of($userModel, LoginUserInterface::class)) {
-            throw new AuthException(sprintf(
-                'User model "%s" must implement the %s',
-                $userModel, LoginUserInterface::class
-            ));
+        return $this->userModel;
+    }
+
+    /**
+     * Получение доступных внешних способов аутентификации.
+     * @return array
+     */
+    protected function supportedForeignSources(): array
+    {
+        if (!$this->supportedForeign) {
+            $this->supportedForeign = array_keys($this->config['foreigns']);
         }
-        return $userModel;
+        return $this->supportedForeign;
     }
 
     /**
@@ -179,10 +199,12 @@ class Auth extends Facade
      */
     protected function supportedSources(): array
     {
-        $supported = array_keys($this->config()['foreigns']);
-        if ($this->config()['password_enable']) $supported[] = 'password';
-        if ($this->config()['code_enable']) $supported[] = 'code';
-        return $supported;
+        if (!$this->supported) {
+            $this->supported = $this->supportedForeignSources();
+            if ($this->config['password_enable']) $this->supported[] = 'password';
+            if ($this->config['code_enable']) $this->supported[] = 'code';
+        }
+        return $this->supported;
     }
 
     /**
@@ -210,7 +232,7 @@ class Auth extends Facade
 
 
     /**
-     * Получение помощника аутентификации.
+     * Получение помощника внешней аутентификации.
      * @param string источник
      * @return OauthInterface
      */
@@ -244,8 +266,8 @@ class Auth extends Facade
      */
     protected function setCookieToken(string $token, int $alive = null)
     {
-        if (!$alive) $alive = Auth::config()['token_alive'];
-        $name = Auth::config()['token_cookie_name'];
+        if (!$alive) $alive = $this->config['token_alive'];
+        $name = $this->config['token_cookie_name'];
         $path = '/';
         $host = App::uri()->getHost();
         setcookie($name, $token, time() + $alive, $path, $host, false, true);
