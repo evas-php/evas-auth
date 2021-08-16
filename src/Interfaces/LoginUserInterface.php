@@ -36,14 +36,14 @@ interface LoginUserInterface
      * @param array данные запроса
      * @return aray отвалидированные данные
      */
-    public static function validateLogin(array $payload): array;
+    public static function validateLogin(array $payload = null): array;
 
     /**
      * Валидация для регистрации по паролю.
      * @param array данные запроса
      * @return aray отвалидированные данные
      */
-    public static function validateRegistration(array $payload): array;
+    public static function validateRegistration(array $payload = null): array;
 
     /**
      * Получение уникальных ключей пользователя для авторизации по паролю.
