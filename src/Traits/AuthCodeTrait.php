@@ -24,7 +24,7 @@ trait AuthCodeTrait
     protected function validateGetCodeFieldset(array $payload = null): array
     {
         $fieldset = new GetCodeFieldset;
-        $fieldset->throwIfNotValid($payload ?? []);
+        $fieldset->throwIfNotValid($payload);
         $data = $fieldset->values;
         $type = $data['type'];
         $to = $data[$type];
@@ -39,7 +39,7 @@ trait AuthCodeTrait
     protected function validateCheckCodeFieldset(array $payload = null): array
     {
         $fieldset = new CheckCodeFieldset;
-        $fieldset->throwIfNotValid($payload ?? []);
+        $fieldset->throwIfNotValid($payload);
         $data = $fieldset->values;
         $type = $data['type'];
         $to = $data[$type];
