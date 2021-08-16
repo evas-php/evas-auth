@@ -16,7 +16,7 @@ use Evas\Auth\Sources\VkOauth;
 
 use Evas\Base\App;
 
-use Evas\Validate\Field;
+use Evas\Auth\Validators\PasswordField;
 
 return [
     'errors' => [
@@ -69,7 +69,8 @@ return [
         AuthRecovery::class => 'auth_recovery',
     ],
     'password_enable' => true,
-    'new_password_field' => Field::class,
+    'new_password_field' => PasswordField::class,
+    'password_label' => 'Пароль',
     'new_password_label' => 'Новый пароль',
     'new_password_repeat_label' => 'Повторите новый пароль',
     'code_enable' => true,
