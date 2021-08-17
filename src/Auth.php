@@ -294,19 +294,24 @@ class Auth extends Facade
     {
         if (false === $this->user_id) {
             $token = $_COOKIE[$this->config['token_cookie_name']] ?? null;
-            $this->user_id = $token ? $this->loggedUserIdByToken($token) : null;
+            $this->user_id = $token ? AuthSession::findUserIdByToken($token) : null;
         }
         return $this->user_id;
     }
 
     /**
-     * Получение id авторизованного пользователя по токену.
-     * @param string токен пользователя
-     * @return int|null id пользователя
+     * Выход авторизованного пользователя.
      */
-    protected function loggedUserIdByToken(string $token): ?int
+    protected function logout()
     {
-        return AuthSession::findUserIdByToken($token);
+        $token = $_COOKIE[$this->config['token_cookie_name']] ?? null;
+        if ($token) {
+            $session = AuthSession::findActualByToken($token);
+            if ($session) {
+                $session->destroy();
+                $this->setCookieToken($session->token, -100);
+            }
+        }
     }
 
     /**
