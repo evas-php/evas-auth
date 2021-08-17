@@ -88,8 +88,8 @@ class AuthSession extends Model
     {
         $loggedUserId = Auth::loggedUserId();
         foreach ($sessions as &$session) {
-            if ($session->user_id === $loggedUserId) {
-                $session->leave(false);
+            if ($session->user_id !== $loggedUserId) {
+                $session->destroy();
             }
         }
     }
@@ -97,7 +97,7 @@ class AuthSession extends Model
     /**
      * Выход из сессии.
      */
-    public function leave()
+    public function destroy()
     {
         return $this->updateEndTime(-1); 
     }
