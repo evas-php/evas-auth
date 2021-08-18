@@ -95,7 +95,7 @@ abstract class BaseOauth implements OauthInterface
      * @param array|null параметры запроса
      * @return array ответ сервера
      */
-    public static function queryApi(string $method = null, array $params = null): array
+    public function queryApi(string $method = null, array $params = null): array
     {
         return static::exec(static::API_URL . $method, $params);
     }
