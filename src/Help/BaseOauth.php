@@ -28,6 +28,8 @@ abstract class BaseOauth implements OauthInterface
     protected $accessData;
     /** @var array данные пользователя */
     protected $userData;
+    /** @var array обработанные подготовленные к записи данные */
+    protected $preparedData;
 
     public function __construct(array $config)
     {
@@ -104,13 +106,13 @@ abstract class BaseOauth implements OauthInterface
      * @return array
      * @throws AuthException
      */
-    public static function fetchAccessByParams(array $params): array
+    public function fetchAccessByParams(array $params): array
     {
         extract($params);
         if (empty($code)) {
             throw AuthException::build('oauth_code_empty', static::SOURCE_NAME);
         }
-        return static::fetchAccess($code);
+        return $this->fetchAccess($code);
     }
 
     /**
@@ -135,7 +137,7 @@ abstract class BaseOauth implements OauthInterface
     public function resolveLogin(array $payload)
     {
         $this->accessData = $this->fetchAccessByParams($payload);
-        $this->userData = $this->fetchUserData($this->accessData);
+        $this->userData = $this->fetchUserDataByAccess($this->accessData);
         return $this;
     }
 
@@ -164,7 +166,7 @@ abstract class BaseOauth implements OauthInterface
     public function getData(): ?array
     {
         if (!$this->preparedData) {
-            $this->prepareData();
+            $this->preparedData = $this->prepareData();
         }
         return $this->preparedData;
     }
@@ -222,6 +224,7 @@ abstract class BaseOauth implements OauthInterface
 
     /**
      * Подготовка пользовательских данных.
+     * @return array
      */
-    abstract protected function prepareData();
+    abstract protected function prepareData(): array;
 }
