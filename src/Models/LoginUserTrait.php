@@ -18,11 +18,6 @@ trait LoginUserTrait
      */
     public static function insertByForeign(string $source, array $data): LoginUserInterface
     {
-        foreach ($data as $name => &$value) {
-            if (!(is_string($value) || is_numeric($value) || is_null($value))) {
-                $value = json_encode($value);
-            }
-        }
         $user = new static;
         $user->setForeignData($source, $data);
         $user->save();
@@ -37,6 +32,11 @@ trait LoginUserTrait
      */
     public function setForeignData(string $source, array $data): LoginUserInterface
     {
+        foreach ($data as $name => &$value) {
+            if (!(is_string($value) || is_numeric($value) || is_null($value))) {
+                $value = json_encode($value);
+            }
+        }
         $this->fill($data);
         $this->save();
         return $this;
