@@ -105,7 +105,7 @@ class GoogleOauth extends BaseOauth
     public function fetchUserDataByAccess(array $accessData): array
     {
         extract($accessData);
-        $data = static::queryApi('tokeninfo', compact(
+        $data = $this->queryApi('tokeninfo', compact(
             'access_token', 'id_token', 'token_type', 'expires_in'
         ));
         if (empty($data)) {
