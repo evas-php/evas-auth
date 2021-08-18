@@ -143,8 +143,9 @@ class FbOauth extends BaseOauth
 
     /**
      * Подготовка пользовательских данных.
+     * @return array
      */
-    protected function prepareData()
+    protected function prepareData(): array
     {
         $data = $this->getUserData();
         static::renameDataKeys($data);
@@ -166,7 +167,7 @@ class FbOauth extends BaseOauth
             $data['city'] = $city;
             $data['region'] = $region;
         }
-        $this->prepareData = $data;
+        return $data;
     }
 
 
