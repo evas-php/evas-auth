@@ -10,6 +10,7 @@ use Evas\Auth\AuthException;
 use Evas\Auth\Help\Config;
 use Evas\Auth\Interfaces\OauthInterface;
 use Evas\Http\CurlRequest;
+use Evas\Http\CurlResponse;
 use Evas\Http\Uri;
 
 abstract class BaseOauth implements OauthInterface
@@ -78,9 +79,9 @@ abstract class BaseOauth implements OauthInterface
      * @param string uri
      * @param string|null тело запроса
      * @param array|null заголовки
-     * @return CurlRequest
+     * @return CurlResponse
      */
-    public static function execCurl(string $method, string $uri, string $body = null, array $headers = null): CurlRequest
+    public static function execCurl(string $method, string $uri, string $body = null, array $headers = null): CurlResponse
     {
         $curl = (new CurlRequest)->withMethod($method)->withUri($uri);
         if (!empty($body)) $curl->withBody($body);
