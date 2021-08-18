@@ -33,11 +33,17 @@ abstract class Model extends ActiveRecord
         // return Auth::getDb($write);
     }
 
+    /**
+     * Установка времени создания.
+     */
     public function setCreateTime()
     {
         $this->create_time = date('Y-m-d H:i:s');
     }
 
+    /**
+     * Хук. Устанавливаем время создания модели при её вставке.
+     */
     protected function beforeInsert()
     {
         $this->setCreateTime();

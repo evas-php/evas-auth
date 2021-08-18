@@ -149,6 +149,9 @@ class AuthSession extends Model
         return strtotime($this->end_time) > time();
     }
 
+    /**
+     * Хук. Обновляем время создания сессии, при её обновлении.
+     */
     protected function beforeUpdate()
     {
         $this->setCreateTime();
