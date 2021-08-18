@@ -134,7 +134,7 @@ class FbOauth extends BaseOauth
         //     $user_ids = substr($user_ids, 0, strpos($user_ids, ','));
         //     $queryData['user_ids'] = $user_ids;
         // }
-        $data = static::queryApi('me', $queryData);
+        $data = $this->queryApi('me', $queryData);
         // static::checkResponse($data);
         return $data;
         // if (!empty($user_ids)) return $data->response;
