@@ -172,8 +172,9 @@ class VkOauth extends BaseOauth
 
     /**
      * Подготовка пользовательских данных.
+     * @return array
      */
-    protected function prepareData()
+    protected function prepareData(): array
     {
         $data = $this->getUserData();
         static::renameDataKeys($data);
@@ -192,7 +193,7 @@ class VkOauth extends BaseOauth
         if (isset($this->accessData['email'])) {
             $data['email'] = $this->accessData['email'];
         }
-        $this->prepareData = $data;
+        return $data;
     }
 
 
