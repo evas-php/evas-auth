@@ -32,4 +32,14 @@ abstract class Model extends ActiveRecord
         return Auth::getDb($dbname);
         // return Auth::getDb($write);
     }
+
+    public function setCreateTime()
+    {
+        $this->create_time = date('Y-m-d H:i:s');
+    }
+
+    protected function beforeInsert()
+    {
+        $this->setCreateTime();
+    }
 }
