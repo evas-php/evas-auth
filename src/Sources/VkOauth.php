@@ -55,7 +55,7 @@ class VkOauth extends BaseOauth
      * @param array|null параметры запроса
      * @return array
      */
-    public static function queryApi(string $method = null, array $params = null): array
+    public function queryApi(string $method = null, array $params = null): array
     {
         $params = array_merge(['v' => $this->config['v']], $params);
         return parent::queryApi($method, $params);
@@ -146,7 +146,7 @@ class VkOauth extends BaseOauth
             $user_ids = substr($user_ids, 0, strpos($user_ids, ','));
             $queryData['user_ids'] = $user_ids;
         }
-        $data = static::queryApi('users.get', $queryData);
+        $data = $this->queryApi('users.get', $queryData);
         static::checkResponse($data);
         if (!empty($user_ids)) return $data['response'];
         return $data['response'][0];
@@ -164,7 +164,7 @@ class VkOauth extends BaseOauth
     {
         if (!$fields) $fields = $this->config['user_fields'];
         $user_ids = implode(',', $user_ids);
-        $data = static::queryApi('users.get', compact('access_token', 'fields', 'user_ids'));
+        $data = $this->queryApi('users.get', compact('access_token', 'fields', 'user_ids'));
         static::checkResponse($data);
         if (!empty($user_ids)) return [$data['response']];
         return $data['response']; 
