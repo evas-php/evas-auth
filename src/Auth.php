@@ -50,6 +50,17 @@ class Auth extends Facade
     }
 
     /**
+     * Монтирование адаптера авторизации по умолчанию из App Di.
+     */
+    protected static function mountDefault()
+    {
+        if (App::di()->has('auth')) {
+            $auth = App::auth();
+            static::mount($auth);
+        }
+    }
+
+    /**
      * Установка конфига модуля аутентификации.
      * @param array|string конфиг или путь к конфигу
      * @return self
