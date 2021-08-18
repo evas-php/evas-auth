@@ -149,6 +149,11 @@ class AuthSession extends Model
         return strtotime($this->end_time) > time();
     }
 
+    protected function beforeUpdate()
+    {
+        $this->setCreateTime();
+    }
+
     /**
      * Поиск сессии по токену.
      * @param string токен
