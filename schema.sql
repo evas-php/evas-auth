@@ -83,7 +83,7 @@ CREATE TABLE `user` (
   `first_name` varchar(30) DEFAULT NULL,
   `last_name` varchar(30) DEFAULT NULL,
   `email` char(60) DEFAULT NULL,
-  `phone` char(10) DEFAULT NULL,
+  `phone` char(16) DEFAULT NULL,
   `login` char(30) DEFAULT NULL,
   `create_time` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
