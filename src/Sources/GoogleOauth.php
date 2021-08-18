@@ -94,7 +94,7 @@ class GoogleOauth extends BaseOauth
         if (empty($data)) {
             throw AuthException::build('oauth_empty_access', static::SOURCE_NAME);
         }
-        return $data;
+        return (array) $data;
     }
 
     /**
