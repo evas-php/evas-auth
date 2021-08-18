@@ -145,11 +145,12 @@ class GoogleOauth extends BaseOauth
 
     /**
      * Подготовка пользовательских данных.
+     * @return array
      */
-    protected function prepareData()
+    protected function prepareData(): array
     {
         $data = $this->getUserData();
         static::renameDataKeys($data);
-        $this->prepareData = $data;
+        return $data;
     }
 }
