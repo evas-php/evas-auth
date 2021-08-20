@@ -157,6 +157,24 @@ class Auth extends Facade
     }
 
     /**
+     * Получение соединения с базой данных.
+     * @param string|null имя соединения с базой данных
+     * @return DatabaseInterface
+     * @throws AuthException
+     */
+    protected function getDb(string $dbname = null): DatabaseInterface
+    {
+        if (!$this->db) {
+            if (!is_callable($this->config['db'] ?? null)) {
+                throw AuthException::build('invalid_db');
+            }
+            $this->db = $this->config['db'];
+        }
+        $db = $this->db;
+        return $db($dbname);
+    }
+
+    /**
      * Получение имени таблицы модели.
      * @param string имя модели
      * @return string имя таблицы
@@ -323,23 +341,5 @@ class Auth extends Facade
                 $this->setCookieToken($session->token, -100);
             }
         }
-    }
-
-    /**
-     * Получение соединения с базой данных.
-     * @param string|null имя соединения с базой данных
-     * @return DatabaseInterface
-     * @throws AuthException
-     */
-    protected function getDb(string $dbname = null): DatabaseInterface
-    {
-        if (!$this->db) {
-            if (!is_callable($this->config['db'] ?? null)) {
-                throw AuthException::build('invalid_db');
-            }
-            $this->db = $this->config['db'];
-        }
-        $db = $this->db;
-        return $db($dbname);
     }
 }
