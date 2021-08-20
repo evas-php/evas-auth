@@ -50,7 +50,7 @@ class Auth extends Facade
     }
 
     /**
-     * Монтирование адаптера авторизации по умолчанию из App Di.
+     * Монтирование адаптера аутентификации по умолчанию из App Di.
      */
     protected static function mountDefault()
     {
