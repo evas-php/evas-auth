@@ -198,7 +198,7 @@ class Auth extends Facade
      */
     protected function supportedForeignSources(): array
     {
-        if (!$this->supportedForeign) {
+        if (null === $this->supportedForeign) {
             $this->supportedForeign = array_keys($this->config['foreigns']);
         }
         return $this->supportedForeign;
@@ -210,7 +210,7 @@ class Auth extends Facade
      */
     protected function supportedSources(): array
     {
-        if (!$this->supported) {
+        if (null === $this->supported) {
             $this->supported = $this->supportedForeignSources();
             if ($this->config['password_enable']) $this->supported[] = 'password';
             if ($this->config['code_enable']) $this->supported[] = 'code';
