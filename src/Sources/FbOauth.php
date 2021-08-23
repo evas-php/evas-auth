@@ -176,7 +176,7 @@ class FbOauth extends BaseOauth
      * @static array маппинг расшифровок ошибок 
      */
     const API_REQUEST_ERRORS_MAP = [
-        4 => 'Первышен общий часовой лимит обращений к Facebook API',
+        4 => 'Превышен общий часовой лимит обращений к Facebook API',
         17 => 'Превышен ваш часовой лимит обращений к Facebook API',
         613 => 'Превышен лимит обращений к методу Facebook API',
          // HTTP X-App-Usage
