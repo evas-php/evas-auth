@@ -20,74 +20,24 @@ use Evas\Auth\Traits\AuthConfirmTrait;
 use Evas\Auth\Traits\AuthForeignTrait;
 use Evas\Auth\Traits\AuthPasswordTrait;
 use Evas\Base\App;
-use Evas\Base\Help\Facade;
+use Evas\Base\Help\FacadeModule;
 use Evas\Db\Interfaces\DatabaseInterface;
 use Evas\Http\Interfaces\RequestInterface;
 
-class Auth extends Facade
+class Auth extends FacadeModule
 {
     use AuthCodeTrait, AuthConfirmTrait, AuthForeignTrait, AuthPasswordTrait;
 
-    /** @var array конфиг */
-    protected $config = [];
     protected $db;
     protected $user_id = false;
     protected $userModel;
     protected $supportedForeign;
     protected $supported;
 
+    /** @static string имя модуля в di */
+    const MODULE_NAME = 'auth';
     /** @static string путь к конфигу по умолчанию */
     const DEFAULT_CONFIG_PATH = __DIR__.'/config.default.php';
-
-    /**
-     * Конструктор.
-     * @param array|null конфиг или путь к конфигу
-     */
-    public function __construct($config = null)
-    {
-        $this->setConfig(static::DEFAULT_CONFIG_PATH);
-        if ($config) $this->setConfig($config);
-    }
-
-    /**
-     * Монтирование адаптера аутентификации по умолчанию из App Di.
-     */
-    protected static function mountDefault()
-    {
-        if (App::di()->has('auth')) {
-            $auth = App::auth();
-            static::mount($auth);
-        }
-    }
-
-    /**
-     * Установка конфига модуля аутентификации.
-     * @param array|string конфиг или путь к конфигу
-     * @return self
-     * @throws \InvalidArgumentException
-     */
-    protected function setConfig($config)
-    {
-        if (is_string($config)) {
-            $config = App::include($filename = $config);
-            if (!is_array($config)) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Auth config "%s" must return array, %s given',
-                    $filename, gettype($config)
-                ));
-            }
-        } else if (!is_array($config)) {
-            throw new \InvalidArgumentException(sprintf(
-                'Argument 1 passed by %s() must be string or array, %s given',
-                __METHOD__, gettype($config)
-            ));
-        }
-        $this->config = array_merge_recursive($this->config(), $config);
-        $this->supportedForeign = null;
-        $this->supported = null;
-        $this->userModel = null;
-        return $this;
-    }
 
     /**
      * Установка внешней аутентификации.
@@ -133,16 +83,6 @@ class Auth extends Facade
         $this->config['userModel'] = $className;
         $this->userModel = null;
         return $this;
-    }
-
-
-    /**
-     * Получение конфига модуля аутентификации.
-     * @return array конфиг
-     */
-    protected function config(): array
-    {
-        return $this->config;
     }
 
     /**
