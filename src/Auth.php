@@ -40,6 +40,17 @@ class Auth extends FacadeModule
     const DEFAULT_CONFIG_PATH = __DIR__.'/config.default.php';
 
     /**
+     * Получение текста или шаблона ошибки из конфига.
+     * @param string имя ошибки
+     * @return string текст или шаблон ошибки
+     */
+    protected function getError(string $name): string
+    {
+        $errors = $this->config()['errors'];
+        return $errors[$name] ?? 'Unknown error';
+    }
+
+    /**
      * Установка внешней аутентификации.
      * @param string источник
      * @param array|string конфиг
@@ -83,17 +94,6 @@ class Auth extends FacadeModule
         $this->config['userModel'] = $className;
         $this->userModel = null;
         return $this;
-    }
-
-    /**
-     * Получение текста или шаблона ошибки из конфига.
-     * @param string имя ошибки
-     * @return string текст или шаблон ошибки
-     */
-    protected function getError(string $name): string
-    {
-        $errors = $this->config()['errors'];
-        return $errors[$name] ?? 'Unknown error';
     }
 
     /**
