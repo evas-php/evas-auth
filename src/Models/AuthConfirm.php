@@ -127,8 +127,8 @@ class AuthConfirm extends Model
      */
     public static function findByUserIdAndCode(int $user_id, string $code): ?AuthConfirm
     {
-        return static::find()->where('user_id = ? AND code = ? AND complete_time IS NULL', [$user_id, $code])
-        ->one()->classObject(static::class);
+        return static::whereRowValues(['user_id', 'code'], [$user_id, $code])
+        ->whereRaw('complete_time IS NULL')->one();
     }
 
     /**
@@ -139,7 +139,6 @@ class AuthConfirm extends Model
      */
     public static function findByUserIdAndTo(int $user_id, string $to): ?AuthConfirm
     {
-        return static::find()->where('user_id = ? AND `to` = ?', [$user_id, $to])
-        ->one()->classObject(static::class);
+        return static::whereRowValues(['user_id', 'to'], [$user_id, $to])->one();
     }
 }

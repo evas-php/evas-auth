@@ -62,10 +62,10 @@ class AuthSession extends Model
             'token_generate_max_tries' => Auth::config()['token_generate_max_tries'],
         ]))->generateUniqueIn(static::tableName());
 
-        $session = static::find()->where(
-            'user_id = ? AND auth_grant_id = ? AND user_ip = ? AND user_agent = ?', 
+        $session = static::whereRowValues(
+            ['user_id', 'auth_grant_id', 'user_ip', 'user_agent'],
             [$user_id, $auth_grant_id, $user_ip, $user_agent]
-        )->one()->classObject(static::class);
+        )->one();
 
         if (empty($session)) {
             list($user_browser, $user_os) = $request->parseUserAgent();
@@ -165,10 +165,9 @@ class AuthSession extends Model
      */
     public static function findByToken(string $token, bool $actual = false): ?AuthSession
     {
-        $where = 'token = ?';
-        if (true === $actual) $where .= ' AND end_time > NOW()';
-        return static::find()->where($where, [$token])
-        ->one()->classObject(static::class);
+        $qb = static::where('token', $token);
+        if (true === $actual) $qb->whereRaw('end_time > NOW()');
+        return $qb->one();
     }
 
     /**
@@ -200,10 +199,9 @@ class AuthSession extends Model
      */
     public static function findByUserId(int $user_id, bool $actual = false): array
     {
-        $where = 'user_id = ?';
-        if (true === $actual) $where .= ' AND end_time > NOW()';
-        return static::find()->where($where, [$user_id])
-        ->query()->classObjectAll(static::class);
+        $qb = static::where('user_id', $user_id)
+        if (true === $actual) $qb->whereRaw('end_time > NOW()');
+        return $qb->get();
     }
 
     /**

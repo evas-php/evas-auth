@@ -94,17 +94,19 @@ trait LoginUserTrait
      */
     public static function findByUniqueKeys(array $data): ?LoginUserInterface
     {
-        $where = $props = [];
+        // $where = $props = [];
+        $qb = null;
         foreach (static::uniqueKeys() as &$key) {
             if (isset($data[$key])) {
-                $where[] = "$key = ?";
-                $props[] = $data[$key];
+                // $where[] = "$key = ?";
+                // $props[] = $data[$key];
+                if (!$qb) $qb = static::where($key, $data[$key]);
+                else $qb = $qb->orWhere($key, $data[$key]);
             }
         }
-        if (empty($props)) return null;
-        $where = implode(' OR ', $where);
-        return static::find()->where($where, $props)->one()
-        ->classObject(static::class);
+        // if (empty($props)) return null;
+        // $where = implode(' OR ', $where);
+        return $qb ? $qb->one() : null;
     }
 
     /**

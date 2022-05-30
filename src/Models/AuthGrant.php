@@ -158,10 +158,10 @@ class AuthGrant extends Model
      */
     public static function findForeign(string $source, string $source_key): ?AuthGrant
     {
-        return static::find()->where(
-            '`source` = ? AND `source_key` = ?',
+        return static::whereRowValues(
+            ['source', 'source_key'],
             [$source, $source_key]
-        )->one()->classObject(static::class);
+        )->one();
     }
 
     /**
@@ -172,12 +172,11 @@ class AuthGrant extends Model
      */
     public static function findByUserId(int $user_id, string ...$sources): array
     {
-        $qb = static::find()->where('`user_id` = ?', [$user_id]);
+        $qb = static::where('user_id', $user_id);
         if (!empty($sources)) {
-            $qb->where(' AND ');
-            $qb->whereIn('`source`', $sources);
+            $qb->whereIn('source', $sources);
         }
-        return $qb->query()->classObjectAll();
+        return $qb->get();
     }
 
     /**
@@ -187,10 +186,10 @@ class AuthGrant extends Model
      */
     public static function findWithPasswordByUserId(int $user_id): ?AuthGrant
     {
-        return static::find()->where(
-            '`source` = ? AND `user_id` = ? ',
+        return static::whereRowValues(
+            ['source', 'user_id'],
             ['password', $user_id]
-        )->one()->classObject(static::class);
+        )->one();
     }
 
     /**
@@ -201,9 +200,9 @@ class AuthGrant extends Model
      */
     public static function findWithCodeByUserId(int $user_id, string $to): ?AuthGrant
     {
-        return static::find()->where(
-            '`source` = ? AND `user_id` = ? AND `source_key` = ?',
+        return static::whereRowValues(
+            ['source', 'user_id', 'source_key'],
             ['code', $user_id, $to]
-        )->one()->classObject(static::class);
+        )->one();
     }
 }
